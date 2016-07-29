@@ -1,22 +1,9 @@
 (ns day8.re-frame.test-test
-  (:require [day8.re-frame.test :as t]
+  (:require [clojure.test :refer :all]
+            [clojure.core.async :as async :refer [go <!! <! >! chan]]
+            [day8.re-frame.test :as t]
             [re-frame.core :as r]
-            [clojure.test :refer :all]))
-
-(use-fixtures :once (fn [f]
-                      (r/reg-event :get-user
-                        (fn [db event]
-                          (future
-                            (Thread/sleep 500)
-                            (r/dispatch [:success {:user-id 1}]))
-                          db))
-                      (r/reg-event :success
-                        (fn [db [_ user-details]]
-                          (assoc db :user user-details)))
-                      (r/reg-sub :user
-                        (fn [db _]
-                          (get db :user)))
-                      (f)))
+            [clojure.tools.logging :as log]))
 
 ;; async
 
@@ -42,14 +29,61 @@
 
 (deftest wait-for-test
   (t/async done
-    (t/wait-for :success (fn [ev]
-                           (println @(r/subscribe [:user]))
-                           (is (= {:user-id 1} @(r/subscribe [:user])))
-                           (done)))
-    (r/dispatch [:get-user])))
+    (t/wait-for :success :failure
+                (fn [ev]
+                  (is (= {:user-id 1} @(r/subscribe [:user])) "Should pass")
+                  (done))
+                done)
+    (r/dispatch [:get-user 1])))
 
+(deftest wait-for-test-failure
+  (binding [t/fail-message "Should fail"]
+    (t/async done
+      (t/wait-for :success :failure
+                  (fn [ev]
+                    (is false "Shouldn't get here")
+                    (done))
+                  done)
+      (r/dispatch [:get-user-fail 1]))))
+
+
+(deftest wait-for-test-ch
+  (t/async done
+    (go
+      (r/dispatch [:get-user 5])
+      (let [[ev & rest] (<! (t/wait-for-ch [:success :failure]))]
+        (if (= :success ev)
+          (is (= {:user-id 5} @(r/subscribe [:user])) "Should pass")
+          (is false "Should pass")))
+      (done))))
 
 ;; testing setup
+
+(use-fixtures :once (fn [f]
+                      (r/reg-event :get-user
+                                   (fn [db [_ user-id]]
+                                     (r/dispatch [:success {:user-id user-id}])
+                                     #_(future
+                                         (Thread/sleep 500)
+                                         (r/dispatch [:success {:user-id user-id}]))
+                                     db))
+                      (r/reg-event :get-user-fail
+                                   (fn [db [_ user-id]]
+                                     (r/dispatch [:failure nil])
+                                     #_(future
+                                         (Thread/sleep 500)
+                                         (r/dispatch [:success {:user-id user-id}]))
+                                     db))
+                      (r/reg-event :success
+                                   (fn [db [_ user-details]]
+                                     (assoc db :user user-details)))
+                      (r/reg-event :failure
+                                   (fn [db _]
+                                     (assoc db :failure true)))
+                      (r/reg-sub :user
+                                 (fn [db _]
+                                   (get db :user)))
+                      (f)))
 
 (declare ^:dynamic original-report)
 
