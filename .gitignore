@@ -1,4 +1,6 @@
 /target
+/run
+/node_modules
 /classes
 /checkouts
 pom.xml

@@ -1,8 +1,12 @@
 (ns day8.re-frame.test
   (:require [re-frame.core :as r]
+            #?(:clj
             [clojure.core.async :as async]
+               :cljs [cljs.core.async :as async])
+    #?(:clj
             [clojure.test :as t]
-            [clojure.tools.logging :as log]))
+               :cljs
+               [cljs.test :as t])))
 
 (defmacro async
   [done & body]
@@ -29,21 +33,22 @@
          cb-id (gensym "wait-for-cb-fn")]
      (r/add-post-event-callback
        cb-id
-       (#'clojure.core/binding-conveyor-fn                  ;; Need this to pass test report bindings into new thread.
-         (fn listener [new-event _]
-           (let [new-id (first new-event)]
-             (when (get fail-set new-id)
-               (r/remove-post-event-callback cb-id)
-               (t/do-report
-                 {:type     :fail
-                  :message  fail-message
-                  :expected ok-set
-                  :actual   new-event})
-               (done))
+       ;; Need this to pass test report bindings into new thread.
+       (#?(:clj bound-fn :cljs fn)
+         [new-event _]
+         (let [new-id (first new-event)]
+           (when (get fail-set new-id)
+             (r/remove-post-event-callback cb-id)
+             (t/do-report
+               {:type     :fail
+                :message  fail-message
+                :expected ok-set
+                :actual   new-event})
+             (done))
 
-             (when (get ok-set new-id)
-               (r/remove-post-event-callback cb-id)
-               (cb new-event)))))))))
+           (when (get ok-set new-id)
+             (r/remove-post-event-callback cb-id)
+             (cb new-event))))))))
 
 (defn wait-for-ch
   [ids]
