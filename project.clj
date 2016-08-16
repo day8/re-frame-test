@@ -13,10 +13,6 @@
                                     [karma-reporter "1.0.1"]]
                    :resource-paths ["test-resources"]}}
 
-  :deploy-repositories
-  [["releases" {:sign-releases false :url "https://clojars.org/repo"}]
-   ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
-
   :release-tasks [["vcs" "assert-committed"]
                   ["change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]
