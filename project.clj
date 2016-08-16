@@ -1,4 +1,4 @@
-(defproject day8.re-frame/test "0.1.1-SNAPSHOT"
+(defproject day8.re-frame/test "0.1.1"
   :description "re-frame testing tools"
   :url "https://github.com/Day8/re-frame-test"
   :license {:name "MIT"
