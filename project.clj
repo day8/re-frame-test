@@ -5,8 +5,7 @@
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.89"]
-                 [org.clojure/core.async "0.2.385"]
-                 [re-frame "0.8.0-alpha9"]]
+                 [re-frame "0.8.0-alpha11"]]
   :plugins [[lein-npm "0.6.2"]
             [lein-cljsbuild "1.1.3"]]
 
