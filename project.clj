@@ -22,6 +22,9 @@
                   ["vcs" "commit"]
                   ["vcs" "push"]]
 
+  :deploy-repositories [["releases" {:sign-releases false :url "https://clojars.org/repo"}]
+                        ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
+
   :jvm-opts ["-Xmx1g" "-XX:+UseConcMarkSweepGC"]
 
   :clean-targets [:target-path "run/compiled"]
