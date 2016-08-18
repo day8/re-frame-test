@@ -86,8 +86,8 @@
                                         (catch Throwable t
                                           (reset! fail-ex t)))))
                  (let [result (deref done-promise *test-timeout* ::timeout)]
-                   (.shutdownNow executor)
-                   (when-not (.awaitTermination executor 1 TimeUnit/SECONDS)
+                   (.shutdown executor)
+                   (when-not (.awaitTermination executor 5 TimeUnit/SECONDS)
                      (throw (ex-info (str "Couldn't cleanly shut down the re-frame event queue's "
                                           "executor.  Possibly this could result in a polluted "
                                           "`app-db` for other tests.  Probably it means you're "
@@ -179,7 +179,7 @@
     (let [ok-pred   (as-callback-pred ok-ids)
           fail-pred (as-callback-pred failure-ids)
           cb-id     (gensym "wait-for-cb-fn")]
-      (rf/add-post-event-callback cb-id (fn [event _]
+      (rf/add-post-event-callback cb-id (#?(:cljs fn :clj bound-fn) [event _]
                                           (cond (and fail-pred
                                                      (not (test/is (not (fail-pred event))
                                                                    "Received failure event")))
@@ -248,7 +248,13 @@
                                                matching an event which matches
                                                at least one predicate
 
-    - `#{:some-event-id (fn [event] ,,,)}` => tries each"
+    - `#{:some-event-id (fn [event] ,,,)}` => tries each
+
+  Note that because we're liberal about whether you supply `failure-ids` and/or
+  `event-sym`, if you do choose to supply only one, and you want that one to be
+  `event-sym`, you can't supply it as a destructuring form (because we can't
+  disambiguate that from a vector of `failure-ids`).  You can just supply `nil`
+  as `failure-ids` in this case, and then you'll be able to destructure."
   [[ids failure-ids event-sym :as argv] & body]
   (let [[failure-ids event-sym] (case (count argv)
                                   3 [failure-ids event-sym]
