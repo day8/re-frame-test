@@ -110,7 +110,14 @@
 (defmacro run-test-async
   "Run `body` as an async re-frame test. The async nature means you'll need to
   use `wait-for` any time you want to make any assertions that should be true
-  *after* an event has been handled.
+  *after* an event has been handled.  It's assumed that there will be at least
+  one `wait-for` in the body of your test (otherwise you don't need this macro
+  at all).
+
+  Note: unlike regular ClojureScript `cljs.test/async` tests, `wait-for` takes
+  care of calling `(done)` for you: you don't need to do anything specific to
+  handle the fact that your test is asynchronous, other than make sure that all
+  your assertions happen with `wait-for` blocks.
 
   This macro will automatically clean up any changes to re-frame state made
   within the test body, as per `with-temp-re-frame-state` (except that the way
@@ -139,7 +146,33 @@
                                                  {:callback-pred callback-pred})))))
 
 
-(defn wait-for* [ok-ids failure-ids callback]
+(defn wait-for*
+  "This function is an implementation detail: in your async tests (within a
+  `run-test-async`), you should use the `wait-for` macro instead.  (For
+  synchronous tests within `run-test-sync`, you don't need this capability at
+  all.)
+
+  Installs `callback` as a re-frame post-event callback handler, called as soon
+  as any event matching `ok-ids` is handled.  Aborts the test as a failure if
+  any event matching `failure-ids` is handled.
+
+  Since this is intended for use in asynchronous tests: it will return
+  immediately after installing the callback -- it doesn't *actually* wait.
+
+  Note that `wait-for*` tracks whether, during your callback, you call
+  `wait-for*` again.  If you *don't*, then, given the way asynchronous tests
+  work, your test must necessarily be finished.  So `wait-for*` will
+  call `(done)` for you."
+  [ok-ids failure-ids callback]
+  ;; `:wait-for-depth` and `:max-wait-for-depth` are used together to track how
+  ;; "deep" we are in callback functions as the test progresses.  We increment
+  ;; `:max-wait-for-depth` before installing a post-event callback handler, then
+  ;; after the event later occurs and the callback handler subsequently runs, we
+  ;; check whether it has been incremented further (indicating another
+  ;; `wait-for*` callback handler has been installed).  If it *hasn't*, since
+  ;; `wait-for*` only makes sense in a tail position, this means the test is
+  ;; complete, and we can call `(done)`, saving the test author the trouble of
+  ;; passing `done` through every single callback.
   (let [{:keys [done] :as test-context} (update *test-context* :wait-for-depth inc)]
     (swap! (:max-wait-for-depth test-context) inc)
 
