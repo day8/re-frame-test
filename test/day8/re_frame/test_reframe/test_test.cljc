@@ -1,14 +1,18 @@
 (ns day8.re-frame.test-reframe.test-test
   (:require #?(:cljs [cljs.test :refer-macros [deftest is]]
                :clj  [clojure.test :refer [deftest is]])
-            #?(:cljs [day8.re-frame.test-reframe.macros :refer-macros [with-captured-test-report]]
-               :clj  [day8.re-frame.test-reframe.macros :refer [with-captured-test-report]])
+            #?(:cljs [day8.re-frame.test-reframe.macros :refer-macros [assert-captured-test-results]]
+               :clj  [day8.re-frame.test-reframe.macros :refer [assert-captured-test-results]])
             [day8.re-frame.test :as rf-test]
             [re-frame.core :as rf]
             re-frame.db
             re-frame.registrar))
 
-#?(:cljs (enable-console-print!))
+;;#?(:cljs (enable-console-print!))
+
+#_
+(rf/add-post-event-callback ::println (fn [event]
+                                        (println "Handled event:" (pr-str event))))
 
 
 (deftest temp-re-frame-state
@@ -67,8 +71,9 @@
 
 
 
-;; To read the tests below: imagine that the contents of the
-;; `with-captured-test-report` macro is the body of a `deftest` in a re-frame
+;; In the tests below, the `assert-captured-test-results` macro takes the first
+;; argument (a function) and calls it with the captured test results of running
+;; the remainder of the macro call as the body of a `deftest` in a re-frame
 ;; application's test code.  Our tests here are asserting against the expected
 ;; test reports that the user would see from their tests.
 
@@ -78,81 +83,84 @@
 ;;;;
 
 (deftest run-test-sync--basic-flow
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-db :initialise-db (fn [_ _] {:hello "world"}))
-                  (rf/reg-event-db :update-db (fn [db [_ arg]] (assoc db :goodbye arg)))
-                  (rf/reg-sub :hello-sub (fn [db _] (:hello db)))
-                  (rf/reg-sub :db-sub (fn [db _] db))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(= "world" @hello-reaction)}
+             {:type :fail, :expected '(= "nope" (:goodbye @db-reaction))} ; Failure noted below.
+             {:type :pass, :expected '(= "world" @hello-reaction)}
+             {:type :pass, :expected '(= {:hello "world", :goodbye "bugs"} @db-reaction)}
+             {:type :end-test-var}])))
 
-                  (let [hello-reaction (rf/subscribe [:hello-sub])
-                        db-reaction    (rf/subscribe [:db-sub])]
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-db :initialise-db (fn [_ _] {:hello "world"}))
+     (rf/reg-event-db :update-db (fn [db [_ arg]] (assoc db :goodbye arg)))
+     (rf/reg-sub :hello-sub (fn [db _] (:hello db)))
+     (rf/reg-sub :db-sub (fn [db _] db))
 
-                    (rf-test/run-test-sync
-                     (rf/dispatch [:initialise-db])
-                     (is (= "world" @hello-reaction))
-                     (is (= "nope" (:goodbye @db-reaction))) ; Not true, reports failure.
+     (let [hello-reaction (rf/subscribe [:hello-sub])
+           db-reaction    (rf/subscribe [:db-sub])]
 
-                     (rf/dispatch [:update-db "bugs"])
-                     (is (= "world" @hello-reaction))
-                     (is (= {:hello "world", :goodbye "bugs"} @db-reaction))))))
-              (map #(select-keys % [:type :expected])))
+       (rf-test/run-test-sync
+        (rf/dispatch [:initialise-db])
+        (is (= "world" @hello-reaction))
+        (is (= "nope" (:goodbye @db-reaction))) ; Not true, reports failure.
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(= "world" @hello-reaction)}
-          {:type :fail, :expected '(= "nope" (:goodbye @db-reaction))} ; Failure noted above.
-          {:type :pass, :expected '(= "world" @hello-reaction)}
-          {:type :pass, :expected '(= {:hello "world", :goodbye "bugs"} @db-reaction)}
-          {:type :end-test-var}])))
+        (rf/dispatch [:update-db "bugs"])
+        (is (= "world" @hello-reaction))
+        (is (= {:hello "world", :goodbye "bugs"} @db-reaction)))))))
 
 
 (deftest run-test-sync--event-handler-dispatches-event
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-ctx :do-stuff
-                    (fn [ctx]
-                      ;; In the real world, you should use effectful event
-                      ;; handlers to `dispatch` as a result of an event, but the
-                      ;; net result here is the same.
-                      (rf/dispatch [:do-more-stuff])
-                      ctx))
-                  (rf/reg-event-db :do-more-stuff
-                    (fn [db _] (assoc db :success true)))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(= true @success)}
+             {:type :end-test-var}])))
 
-                  (rf/reg-sub :success (fn [db _] (:success db)))
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-ctx :do-stuff
+       (fn [ctx]
+         ;; In the real world, you should use effectful event
+         ;; handlers to `dispatch` as a result of an event, but the
+         ;; net result here is the same.
+         (rf/dispatch [:do-more-stuff])
+         ctx))
+     (rf/reg-event-db :do-more-stuff
+       (fn [db _] (assoc db :success true)))
 
-                  (let [success (rf/subscribe [:success])]
-                    (rf-test/run-test-sync
-                     (rf/dispatch [:do-stuff])
-                     (is (= true @success))))))
-              (map #(select-keys % [:type :expected])))
+     (rf/reg-sub :success (fn [db _] (:success db)))
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(= true @success)}
-          {:type :end-test-var}])))
+     (let [success (rf/subscribe [:success])]
+       (rf-test/run-test-sync
+        (rf/dispatch [:do-stuff])
+        (is (= true @success)))))))
 
 
 (deftest run-test-sync--error-in-event-handler
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-ctx :do-stuff
-                    (fn [ctx]
-                      (rf/dispatch [:do-more-stuff])
-                      ctx))
-                  (rf/reg-event-db :do-more-stuff
-                    (fn [db _]
-                      (throw (ex-info "Whoops!" {:expected true}))))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(= true (boolean "Did get here."))}
+             {:type :error, :expected nil}
+             {:type :end-test-var}])))
 
-                  (rf-test/run-test-sync
-                   (is (= true (boolean "Did get here.")))
-                   (rf/dispatch [:do-stuff]) ; Synchronously explodes.
-                   (is (= true (boolean "Not gonna get here..."))))))
-              (map #(select-keys % [:type :expected])))
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-ctx :do-stuff
+       (fn [ctx]
+         (rf/dispatch [:do-more-stuff])
+         ctx))
+     (rf/reg-event-db :do-more-stuff
+       (fn [db _]
+         (throw (ex-info "Whoops!" {:expected true}))))
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(= true (boolean "Did get here."))}
-          {:type :error, :expected nil}
-          {:type :end-test-var}])))
+     (rf-test/run-test-sync
+      (is (= true (boolean "Did get here.")))
+      (rf/dispatch [:do-stuff])         ; Synchronously explodes.
+      (is (= true (boolean "Not gonna get here...")))))))
 
 
 ;;;;
@@ -160,149 +168,154 @@
 ;;;;
 
 (deftest run-test-async--basic-flow
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-db :initialise-db (fn [_ _] {:hello "world"}))
-                  (rf/reg-event-db :update-db (fn [db [_ arg]] (assoc db :goodbye arg)))
-                  (rf/reg-sub :hello-sub (fn [db _] (:hello db)))
-                  (rf/reg-sub :db-sub (fn [db _] db))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(= "world" @hello-reaction)}
+             {:type :fail, :expected '(= "nope" (:goodbye @db-reaction))} ; Failure noted above.
+             {:type :pass, :expected '(= "world" @hello-reaction)}
+             {:type :pass, :expected '(= {:hello "world", :goodbye "bugs"} @db-reaction)}
+             ;; This "not timeout" is always reported for passing async tests.
+             {:type :pass, :expected '(not= ::rf-test/timeout result)}
+             {:type :end-test-var}])))
 
-                  (let [hello-reaction (rf/subscribe [:hello-sub])
-                        db-reaction    (rf/subscribe [:db-sub])]
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-db :initialise-db (fn [_ _] {:hello "world"}))
+     (rf/reg-event-db :update-db (fn [db [_ arg]] (assoc db :goodbye arg)))
+     (rf/reg-sub :hello-sub (fn [db _] (:hello db)))
+     (rf/reg-sub :db-sub (fn [db _] db))
 
-                    (rf-test/run-test-async
-                     (rf/dispatch [:initialise-db])
-                     (rf-test/wait-for [:initialise-db]
-                       (is (= "world" @hello-reaction))
-                       (is (= "nope" (:goodbye @db-reaction))) ; Not true, reports failure.
+     (let [hello-reaction (rf/subscribe [:hello-sub])
+           db-reaction    (rf/subscribe [:db-sub])]
 
-                       (rf/dispatch [:update-db "bugs"])
-                       (rf-test/wait-for [:update-db]
-                         (is (= "world" @hello-reaction))
-                         (is (= {:hello "world", :goodbye "bugs"} @db-reaction))))))))
-              (map #(select-keys % [:type :expected])))
+       (rf-test/run-test-async
+        (rf/dispatch [:initialise-db])
+        (rf-test/wait-for [:initialise-db]
+          (is (= "world" @hello-reaction))
+          (is (= "nope" (:goodbye @db-reaction))) ; Not true, reports failure.
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(= "world" @hello-reaction)}
-          {:type :fail, :expected '(= "nope" (:goodbye @db-reaction))} ; Failure noted above.
-          {:type :pass, :expected '(= "world" @hello-reaction)}
-          {:type :pass, :expected '(= {:hello "world", :goodbye "bugs"} @db-reaction)}
-          ;; This "not timeout" is always reported for passing async tests.
-          {:type :pass, :expected '(not= ::rf-test/timeout result)}
-          {:type :end-test-var}])))
+          (rf/dispatch [:update-db "bugs"])
+          (rf-test/wait-for [:update-db]
+            (is (= "world" @hello-reaction))
+            (is (= {:hello "world", :goodbye "bugs"} @db-reaction)))))))))
 
 
 (deftest run-test-async--with-actual-asynchrony
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-ctx :async
-                    (fn [ctx]
-                      #?(:cljs (js/setTimeout 50 #(rf/dispatch [:continue "event-arg"]))
-                         :clj  (.start (Thread. #(do
-                                                   (Thread/sleep 50)
-                                                   (rf/dispatch [:continue "event-arg"])))))
-                      ctx))
-                  (rf/reg-event-db :continue (fn [db _]
-                                               (assoc db :success true)))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(= :continue event-id)}
+             {:type :pass, :expected '(= "event-arg" event-arg)}
+             {:type :pass, :expected '(= true @success)}
+             {:type :pass, :expected '(not= ::rf-test/timeout result)}
+             {:type :end-test-var}])))
 
-                  (rf/reg-sub :success (fn [db _] (:success db)))
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-ctx :async
+       (fn [ctx]
+         #?(:cljs (js/setTimeout 50 #(rf/dispatch [:continue "event-arg"]))
+            :clj  (.start (Thread. #(do
+                                      (Thread/sleep 50)
+                                      (rf/dispatch [:continue "event-arg"])))))
+         ctx))
+     (rf/reg-event-db :continue (fn [db _]
+                                  (assoc db :success true)))
 
-                  (let [success (rf/subscribe [:success])]
-                    (rf-test/run-test-async
-                     (rf/dispatch [:async])
-                     ;; Additionally tests the event binding form.
-                     (rf-test/wait-for [:continue nil [event-id event-arg]]
-                       (is (= :continue event-id))
-                       (is (= "event-arg" event-arg))
-                       (is (= true @success)))))))
-              (map #(select-keys % [:type :expected])))
+     (rf/reg-sub :success (fn [db _] (:success db)))
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(= :continue event-id)}
-          {:type :pass, :expected '(= "event-arg" event-arg)}
-          {:type :pass, :expected '(= true @success)}
-          {:type :pass, :expected '(not= ::rf-test/timeout result)}
-          {:type :end-test-var}])))
+     (let [success (rf/subscribe [:success])]
+       (rf-test/run-test-async
+        (rf/dispatch [:async])
+        ;; Additionally tests the event binding form.
+        (rf-test/wait-for [:continue nil [event-id event-arg]]
+          (is (= :continue event-id))
+          (is (= "event-arg" event-arg))
+          (is (= true @success))))))))
 
 
 (deftest run-test-async--test-times-out
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  ;; As per previous test, but :async event doesn't actually
-                  ;; ever cause :continue to be dispatched, so we time out
-                  ;; waiting.
-                  (rf/reg-event-ctx :async (fn [ctx] ctx))
-                  (rf/reg-event-db :continue (fn [db _]
-                                               (assoc db :success true)))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(= true (boolean "Did get here."))}
+             {:type :fail, :expected '(not= ::rf-test/timeout result)}
+             {:type :end-test-var}])))
 
-                  (binding [rf-test/*test-timeout* 100]
-                    (rf-test/run-test-async
-                     (rf/dispatch [:async])
-                     (is (= true (boolean "Did get here.")))
-                     (rf-test/wait-for [:continue]
-                       (is (= true (boolean "Not gonna get here..."))))))))
-              (map #(select-keys % [:type :expected])))
+   (rf-test/with-temp-re-frame-state
+     ;; As per previous test, but :async event doesn't actually
+     ;; ever cause :continue to be dispatched, so we time out
+     ;; waiting.
+     (rf/reg-event-ctx :async (fn [ctx] ctx))
+     (rf/reg-event-db :continue (fn [db _]
+                                  (assoc db :success true)))
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(= true (boolean "Did get here."))}
-          {:type :fail, :expected '(not= ::rf-test/timeout result)}
-          {:type :end-test-var}])))
+     (binding [rf-test/*test-timeout* 100]
+       (rf-test/run-test-async
+        (rf/dispatch [:async])
+        (is (= true (boolean "Did get here.")))
+        (rf-test/wait-for [:continue]
+          (is (= true (boolean "Not gonna get here...")))))))))
 
 
 (deftest run-test-async--test-dispatches-failure-event
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-ctx :async
-                    (fn [ctx]
-                      #?(:cljs (js/setTimeout 50 #(rf/dispatch [:stop]))
-                         :clj  (.start (Thread. #(do
-                                                   (Thread/sleep 50)
-                                                   (rf/dispatch [:stop])))))
-                      ctx))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            [{:type :begin-test-var}
+             {:type :pass, :expected '(not (fail-pred event))} ; The :async event.
+             {:type :fail, :expected '(not (fail-pred event))} ; The :stop event.
+             {:type :pass, :expected '(not= ::rf-test/timeout result)}
+             {:type :end-test-var}])))
 
-                  (rf-test/run-test-async
-                   (rf/dispatch [:async])
-                   (rf-test/wait-for [:continue :stop]
-                     (is (= true "Not gonna get here..."))))))
-              (map #(select-keys % [:type :expected])))
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-ctx :async
+       (fn [ctx]
+         #?(:cljs (js/setTimeout 50 #(rf/dispatch [:stop]))
+            :clj  (.start (Thread. #(do
+                                      (Thread/sleep 50)
+                                      (rf/dispatch [:stop])))))
+         ctx))
 
-         [{:type :begin-test-var}
-          {:type :pass, :expected '(not (fail-pred event))} ; The :async event.
-          {:type :fail, :expected '(not (fail-pred event))} ; The :stop event.
-          {:type :pass, :expected '(not= ::rf-test/timeout result)}
-          {:type :end-test-var}])))
+     (rf-test/run-test-async
+      (rf/dispatch [:async])
+      (rf-test/wait-for [:continue :stop]
+        (is (= true "Not gonna get here...")))))))
 
 
 (deftest run-test-async--error-in-event-handler
-  (is (= (->> (with-captured-test-report
-                (rf-test/with-temp-re-frame-state
-                  (rf/reg-event-ctx :async
-                    (fn [ctx]
-                      #?(:cljs (js/setTimeout 50 #(rf/dispatch [:continue]))
-                         :clj  (.start (Thread. #(do
-                                                   (Thread/sleep 50)
-                                                   (rf/dispatch [:continue])))))
-                      ctx))
-                  (rf/reg-event-db :continue
-                    (fn [db _]
-                      (throw (ex-info (str "Whoops!  (Not really, we threw this exception "
-                                           "deliberately for testing purposes, and the fact that "
-                                           "you're seeing it here on the console doesn't actually "
-                                           "indicate a test failure.)")
-                                      {:foo :bar}))))
+  (assert-captured-test-results
+   (fn [results]
+     (is (= (map #(select-keys % [:type :expected]) results)
+            ;; Note you don't actually get the error from the event handler here,
+            ;; even though it threw an exception. It'll get printed to the console,
+            ;; but since it happens in a different thread, from the test's point of
+            ;; view, all you see is a timeout.  This is one advantage of
+            ;; synchronous tests.
+            [{:type :begin-test-var}
+             {:type :fail, :expected '(not= ::rf-test/timeout result)}
+             {:type :end-test-var}])))
 
-                  (binding [rf-test/*test-timeout* 100]
-                    (rf-test/run-test-async
-                     (rf/dispatch [:async])
-                     (rf-test/wait-for [:continue nil event]
-                       (is (= [:continue] event)))))))
-              (map #(select-keys % [:type :expected])))
+   (rf-test/with-temp-re-frame-state
+     (rf/reg-event-ctx :async
+       (fn [ctx]
+         #?(:cljs (js/setTimeout 50 #(rf/dispatch [:continue]))
+            :clj  (.start (Thread. #(do
+                                      (Thread/sleep 50)
+                                      (rf/dispatch [:continue])))))
+         ctx))
+     (rf/reg-event-db :continue
+       (fn [db _]
+         (throw (ex-info (str "Whoops!  (Not really, we threw this exception "
+                              "deliberately for testing purposes, and the fact that "
+                              "you're seeing it here on the console doesn't actually "
+                              "indicate a test failure.)")
+                         {:foo :bar}))))
 
-         ;; Note you don't actually get the error from the event handler here,
-         ;; even though it threw an exception. It'll get printed to the console,
-         ;; but since it happens in a different thread, from the test's point of
-         ;; view, all you see is a timeout.  This is one advantage of
-         ;; synchronous tests.
-         [{:type :begin-test-var}
-          {:type :fail, :expected '(not= ::rf-test/timeout result)}
-          {:type :end-test-var}])))
+     (binding [rf-test/*test-timeout* 100]
+       (rf-test/run-test-async
+        (rf/dispatch [:async])
+        (rf-test/wait-for [:continue nil event]
+          (is (= [:continue] event))))))))
