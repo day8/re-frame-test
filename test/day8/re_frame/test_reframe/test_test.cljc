@@ -292,16 +292,11 @@
                                                    (Thread/sleep 50)
                                                    (rf/dispatch [:stop])))))
                       ctx))
-                  (rf/reg-event-db :continue (fn [db _]
-                                               (assoc db :success true)))
 
-                  (rf/reg-sub :success (fn [db _] (:success db)))
-
-                  (let [success (rf/subscribe [:success])]
-                    (rf-test/run-test-async
-                     (rf/dispatch [:async])
-                     (rf-test/wait-for [:continue :stop]
-                       (is (= true @success)))))))
+                  (rf-test/run-test-async
+                   (rf/dispatch [:async])
+                   (rf-test/wait-for [:continue :stop]
+                     (is (= true "Not gonna get here..."))))))
               (map #(select-keys % [:type :expected])))
 
          [{:type :begin-test-var}
@@ -326,7 +321,7 @@
                       (throw (ex-info (str "Whoops!  (Not really, we threw this exception "
                                            "deliberately for testing purposes, and the fact that "
                                            "you're seeing it here on the console doesn't actually "
-                                           "indicate a test failure.")
+                                           "indicate a test failure.)")
                                       {:foo :bar}))))
 
                   (binding [rf-test/*test-timeout* 100]

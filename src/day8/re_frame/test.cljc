@@ -84,22 +84,22 @@
                                         (binding [*test-context* test-context]
                                           (f))
                                         (catch Throwable t
-                                          (reset! fail-ex t)))))
-                 (let [result (deref done-promise *test-timeout* ::timeout)]
-                   (.shutdown executor)
-                   (when-not (.awaitTermination executor 5 TimeUnit/SECONDS)
-                     (throw (ex-info (str "Couldn't cleanly shut down the re-frame event queue's "
-                                          "executor.  Possibly this could result in a polluted "
-                                          "`app-db` for other tests.  Probably it means you're "
-                                          "doing something very strange in an event handler.  "
-                                          "(Catching InterruptedException, for a start.)")
-                                     {})))
-                   (if-let [ex @fail-ex]
-                     (throw ex)
-                     (test/is (not= ::timeout result)
-                              (str "Test timed out after " *test-timeout* "ms"
-                                   (when-let [ev @(:now-waiting-for test-context)]
-                                     (str ", waiting for " (pr-str ev) "."))))))))
+                                          (reset! fail-ex t))))
+                   (let [result (deref done-promise *test-timeout* ::timeout)]
+                     (.shutdown executor)
+                     (when-not (.awaitTermination executor 5 TimeUnit/SECONDS)
+                       (throw (ex-info (str "Couldn't cleanly shut down the re-frame event queue's "
+                                            "executor.  Possibly this could result in a polluted "
+                                            "`app-db` for other tests.  Probably it means you're "
+                                            "doing something very strange in an event handler.  "
+                                            "(Catching InterruptedException, for a start.)")
+                                       {})))
+                     (if-let [ex @fail-ex]
+                       (throw ex)
+                       (test/is (not= ::timeout result)
+                                (str "Test timed out after " *test-timeout* "ms"
+                                     (when-let [ev @(:now-waiting-for test-context)]
+                                       (str ", waiting for " (pr-str ev) ".")))))))))
 
        :cljs (test/async done
                (let [restore-fn (make-re-frame-restore-fn)]
