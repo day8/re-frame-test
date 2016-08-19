@@ -25,14 +25,6 @@
         (recur queue-atom)))))
 
 
-(defn make-re-frame-restore-fn []
-  (let [handlers @@#'rf-registrar/kind->id->handler
-        app-db   @@#'rf-db/app-db]
-    (fn []
-      (reset! @#'rf-registrar/kind->id->handler handlers)
-      (reset! @#'rf-db/app-db app-db)
-      nil)))
-
 (defmacro with-temp-re-frame-state
   "Run `body`, but discard whatever effects it may have on re-frame's internal
   state (by resetting `app-db` and re-frame's various different types of
@@ -42,7 +34,7 @@
   will perform the cleanup before your async code actually has a chance to run.
   `run-test-async` will automatically do this cleanup for you."
   [& body]
-  `(let [restore-fn# (make-re-frame-restore-fn)]
+  `(let [restore-fn# (rf/make-restore-fn)]
      (try
        ~@body
        (finally
@@ -102,7 +94,7 @@
                                        (str ", waiting for " (pr-str ev) ".")))))))))
 
        :cljs (test/async done
-               (let [restore-fn (make-re-frame-restore-fn)]
+               (let [restore-fn (rf/make-restore-fn)]
                  (binding [*test-context* (assoc test-context :done (fn [] (done) (restore-fn)))]
                    (f)))))))
 
