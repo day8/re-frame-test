@@ -1,6 +1,8 @@
 (ns day8.re-frame.test-reframe.test-test
   (:require #?(:cljs [cljs.test :refer-macros [deftest is]]
                :clj  [clojure.test :refer [deftest is]])
+            #?(:cljs [day8.re-frame.test-reframe.macros :refer-macros [with-captured-test-report]]
+               :clj  [day8.re-frame.test-reframe.macros :refer [with-captured-test-report]])
             [day8.re-frame.test :as rf-test]
             [re-frame.core :as rf]
             re-frame.db
@@ -62,41 +64,6 @@
           (is (= false @dead))))
       (finally
         (cleanup!)))))
-
-
-
-(defmacro with-captured-test-report
-  "Execute `body` as a test within a context where `clojure.test` or `cljs.test`
-  will use a reporting function that -- instead of reporting test success or
-  failure as per normal -- will just capture (and subsequently return) the calls
-  made to the report function, for subsequent inspection.
-
-  Used in the tests below with a `body` representing a test we might expect a
-  user of this library to write, to assert that running that test produces the
-  correct output from clojure.test.
-
-  Don't forget to say hi to the turtles on the way down..."
-  [& body]
-  (let [cljs-env?        (boolean (:ns &env))
-        report-fn-gensym (gensym "report-fn")]
-    `(let [test-results-atom# (atom [])
-           ~report-fn-gensym  (fn [m#] (swap! test-results-atom# conj m#))]
-       (deftest captured-test#
-         ~@body)
-
-       (binding ~(if cljs-env?
-                   ['cljs.test/*current-env* (list 'assoc 'cljs.test/*current-env*
-                                                   :report report-fn-gensym)]
-                   ['clojure.test/report report-fn-gensym])
-         (~(if cljs-env?
-             'cljs.test/test-var
-             'clojure.test/test-var)
-          (var captured-test#)))
-
-       (alter-meta! #'captured-test# dissoc :test)
-       (ns-unmap *ns* (symbol (name 'captured-test#)))
-
-       (deref test-results-atom#))))
 
 
 
