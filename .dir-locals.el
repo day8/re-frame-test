@@ -3,4 +3,5 @@
 
 ((clojure-mode
   (eval define-clojure-indent
-        (wait-for '(:defn)))))
+        (wait-for '(:defn))
+        (async    '(:defn)))))

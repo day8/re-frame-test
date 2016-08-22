@@ -95,7 +95,7 @@
 
        :cljs (test/async done
                (let [restore-fn (rf/make-restore-fn)]
-                 (binding [*test-context* (assoc test-context :done (fn [] (done) (restore-fn)))]
+                 (binding [*test-context* (assoc test-context :done (fn [] (restore-fn) (done)))]
                    (f)))))))
 
 
