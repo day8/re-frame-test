@@ -25,28 +25,21 @@
         (recur queue-atom)))))
 
 
-(defn make-re-frame-restore-fn []
-  (let [handlers @@#'rf-registrar/kind->id->handler
-        app-db   @@#'rf-db/app-db]
-    (fn []
-      (reset! @#'rf-registrar/kind->id->handler handlers)
-      (reset! @#'rf-db/app-db app-db)
-      nil)))
+#?(:clj
+   (defmacro with-temp-re-frame-state
+     "Run `body`, but discard whatever effects it may have on re-frame's internal
+      state (by resetting `app-db` and re-frame's various different types of
+      handlers after `body` has run).
 
-(defmacro with-temp-re-frame-state
-  "Run `body`, but discard whatever effects it may have on re-frame's internal
-  state (by resetting `app-db` and re-frame's various different types of
-  handlers after `body` has run).
-
-  Note: you *can't* use this macro to clean up a JS async test, since the macro
-  will perform the cleanup before your async code actually has a chance to run.
-  `run-test-async` will automatically do this cleanup for you."
-  [& body]
-  `(let [restore-fn# (make-re-frame-restore-fn)]
-     (try
-       ~@body
-       (finally
-         (restore-fn#)))))
+      Note: you *can't* use this macro to clean up a JS async test, since the macro
+      will perform the cleanup before your async code actually has a chance to run.
+      `run-test-async` will automatically do this cleanup for you."
+     [& body]
+     `(let [restore-fn# (rf/make-restore-fn)]
+        (try
+          ~@body
+          (finally
+            (restore-fn#))))))
 
 
 ;;;;
@@ -84,33 +77,40 @@
                                         (binding [*test-context* test-context]
                                           (f))
                                         (catch Throwable t
-                                          (reset! fail-ex t)))))
-                 (let [result (deref done-promise *test-timeout* ::timeout)]
-                   (.shutdownNow executor)
-                   (when-not (.awaitTermination executor 1 TimeUnit/SECONDS)
-                     (throw (ex-info (str "Couldn't cleanly shut down the re-frame event queue's "
-                                          "executor.  Possibly this could result in a polluted "
-                                          "`app-db` for other tests.  Probably it means you're "
-                                          "doing something very strange in an event handler.  "
-                                          "(Catching InterruptedException, for a start.)")
-                                     {})))
-                   (if-let [ex @fail-ex]
-                     (throw ex)
-                     (test/is (not= ::timeout result)
-                              (str "Test timed out after " *test-timeout* "ms"
-                                   (when-let [ev @(:now-waiting-for test-context)]
-                                     (str ", waiting for " (pr-str ev) "."))))))))
+                                          (reset! fail-ex t))))
+                   (let [result (deref done-promise *test-timeout* ::timeout)]
+                     (.shutdown executor)
+                     (when-not (.awaitTermination executor 5 TimeUnit/SECONDS)
+                       (throw (ex-info (str "Couldn't cleanly shut down the re-frame event queue's "
+                                            "executor.  Possibly this could result in a polluted "
+                                            "`app-db` for other tests.  Probably it means you're "
+                                            "doing something very strange in an event handler.  "
+                                            "(Catching InterruptedException, for a start.)")
+                                       {})))
+                     (if-let [ex @fail-ex]
+                       (throw ex)
+                       (test/is (not= ::timeout result)
+                                (str "Test timed out after " *test-timeout* "ms"
+                                     (when-let [ev @(:now-waiting-for test-context)]
+                                       (str ", waiting for " (pr-str ev) ".")))))))))
 
        :cljs (test/async done
-               (let [restore-fn (make-re-frame-restore-fn)]
-                 (binding [*test-context* (assoc test-context :done (fn [] (done) (restore-fn)))]
+               (let [restore-fn (rf/make-restore-fn)]
+                 (binding [*test-context* (assoc test-context :done (fn [] (restore-fn) (done)))]
                    (f)))))))
 
 
 (defmacro run-test-async
   "Run `body` as an async re-frame test. The async nature means you'll need to
   use `wait-for` any time you want to make any assertions that should be true
-  *after* an event has been handled.
+  *after* an event has been handled.  It's assumed that there will be at least
+  one `wait-for` in the body of your test (otherwise you don't need this macro
+  at all).
+
+  Note: unlike regular ClojureScript `cljs.test/async` tests, `wait-for` takes
+  care of calling `(done)` for you: you don't need to do anything specific to
+  handle the fact that your test is asynchronous, other than make sure that all
+  your assertions happen with `wait-for` blocks.
 
   This macro will automatically clean up any changes to re-frame state made
   within the test body, as per `with-temp-re-frame-state` (except that the way
@@ -139,14 +139,40 @@
                                                  {:callback-pred callback-pred})))))
 
 
-(defn wait-for* [ok-ids failure-ids callback]
+(defn wait-for*
+  "This function is an implementation detail: in your async tests (within a
+  `run-test-async`), you should use the `wait-for` macro instead.  (For
+  synchronous tests within `run-test-sync`, you don't need this capability at
+  all.)
+
+  Installs `callback` as a re-frame post-event callback handler, called as soon
+  as any event matching `ok-ids` is handled.  Aborts the test as a failure if
+  any event matching `failure-ids` is handled.
+
+  Since this is intended for use in asynchronous tests: it will return
+  immediately after installing the callback -- it doesn't *actually* wait.
+
+  Note that `wait-for*` tracks whether, during your callback, you call
+  `wait-for*` again.  If you *don't*, then, given the way asynchronous tests
+  work, your test must necessarily be finished.  So `wait-for*` will
+  call `(done)` for you."
+  [ok-ids failure-ids callback]
+  ;; `:wait-for-depth` and `:max-wait-for-depth` are used together to track how
+  ;; "deep" we are in callback functions as the test progresses.  We increment
+  ;; `:max-wait-for-depth` before installing a post-event callback handler, then
+  ;; after the event later occurs and the callback handler subsequently runs, we
+  ;; check whether it has been incremented further (indicating another
+  ;; `wait-for*` callback handler has been installed).  If it *hasn't*, since
+  ;; `wait-for*` only makes sense in a tail position, this means the test is
+  ;; complete, and we can call `(done)`, saving the test author the trouble of
+  ;; passing `done` through every single callback.
   (let [{:keys [done] :as test-context} (update *test-context* :wait-for-depth inc)]
     (swap! (:max-wait-for-depth test-context) inc)
 
     (let [ok-pred   (as-callback-pred ok-ids)
           fail-pred (as-callback-pred failure-ids)
           cb-id     (gensym "wait-for-cb-fn")]
-      (rf/add-post-event-callback cb-id (fn [event _]
+      (rf/add-post-event-callback cb-id (#?(:cljs fn :clj bound-fn) [event _]
                                           (cond (and fail-pred
                                                      (not (test/is (not (fail-pred event))
                                                                    "Received failure event")))
@@ -215,7 +241,13 @@
                                                matching an event which matches
                                                at least one predicate
 
-    - `#{:some-event-id (fn [event] ,,,)}` => tries each"
+    - `#{:some-event-id (fn [event] ,,,)}` => tries each
+
+  Note that because we're liberal about whether you supply `failure-ids` and/or
+  `event-sym`, if you do choose to supply only one, and you want that one to be
+  `event-sym`, you can't supply it as a destructuring form (because we can't
+  disambiguate that from a vector of `failure-ids`).  You can just supply `nil`
+  as `failure-ids` in this case, and then you'll be able to destructure."
   [[ids failure-ids event-sym :as argv] & body]
   (let [[failure-ids event-sym] (case (count argv)
                                   3 [failure-ids event-sym]
@@ -236,7 +268,7 @@
 (def ^{:dynamic true, :private true} *handling* false)
 
 (defn run-test-sync* [f]
-  (with-temp-re-frame-state
+  (day8.re-frame.test/with-temp-re-frame-state
     ;; Bypass the actual re-frame EventQueue and use a local alternative over
     ;; which we have full control.
     (let [my-queue (atom rf-int/empty-queue)]
