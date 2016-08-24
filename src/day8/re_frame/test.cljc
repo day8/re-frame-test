@@ -25,20 +25,21 @@
         (recur queue-atom)))))
 
 
-(defmacro with-temp-re-frame-state
-  "Run `body`, but discard whatever effects it may have on re-frame's internal
-  state (by resetting `app-db` and re-frame's various different types of
-  handlers after `body` has run).
+#?(:clj
+   (defmacro with-temp-re-frame-state
+     "Run `body`, but discard whatever effects it may have on re-frame's internal
+      state (by resetting `app-db` and re-frame's various different types of
+      handlers after `body` has run).
 
-  Note: you *can't* use this macro to clean up a JS async test, since the macro
-  will perform the cleanup before your async code actually has a chance to run.
-  `run-test-async` will automatically do this cleanup for you."
-  [& body]
-  `(let [restore-fn# (rf/make-restore-fn)]
-     (try
-       ~@body
-       (finally
-         (restore-fn#)))))
+      Note: you *can't* use this macro to clean up a JS async test, since the macro
+      will perform the cleanup before your async code actually has a chance to run.
+      `run-test-async` will automatically do this cleanup for you."
+     [& body]
+     `(let [restore-fn# (rf/make-restore-fn)]
+        (try
+          ~@body
+          (finally
+            (restore-fn#))))))
 
 
 ;;;;
@@ -267,7 +268,7 @@
 (def ^{:dynamic true, :private true} *handling* false)
 
 (defn run-test-sync* [f]
-  (with-temp-re-frame-state
+  (day8.re-frame.test/with-temp-re-frame-state
     ;; Bypass the actual re-frame EventQueue and use a local alternative over
     ;; which we have full control.
     (let [my-queue (atom rf-int/empty-queue)]

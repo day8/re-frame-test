@@ -4,9 +4,20 @@
 
 A Clojure library designed to ... well, that part is up to you.
 
+
 ## Usage
 
 FIXME
+
+
+## Running the CLJS tests with Karma
+
+You will need `npm`, with:
+
+    npm install -g karma karma-cli karma-cljs-test karma-junit-reporter karma-chrome-launcher
+
+And you will need Chrome.
+
 
 ## License
 
