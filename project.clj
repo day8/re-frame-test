@@ -52,9 +52,7 @@
                             :main          "re_frame_undo.test_runner"
                             :pretty-print  true}}]}
 
-  :aliases {"test-once"  ["do" "clean," "cljsbuild" "once" "test," "shell" "open" "test/test.html"]
-            "test-auto"  ["do" "clean," "cljsbuild" "auto" "test,"]
-            "karma-once" ["do" "clean," "cljsbuild" "once" "karma,"]
+  :aliases {"karma-once" ["do" "clean," "cljsbuild" "once" "karma,"]
             "karma-auto" ["do" "clean," "cljsbuild" "auto" "karma,"]})
 
 
