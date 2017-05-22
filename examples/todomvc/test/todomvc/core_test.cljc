@@ -86,7 +86,7 @@
 
 (deftest basic--async
   (rf-test/run-test-async
-    (rf/dispatch [:initialise-db])
+    (rf/dispatch-sync [:initialise-db])
 
     (let [showing         (rf/subscribe [:showing])
           sorted-todos    (rf/subscribe [:sorted-todos])

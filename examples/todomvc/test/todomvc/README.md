@@ -75,4 +75,59 @@ this event immediately.
                  
 Test that the dispatch has mutated the state in the way that we expect.
     
+### run-test-async
+Run `body` as an async re-frame test. The async nature means you'll need to
+use `wait-for` any time you want to make any assertions that should be true
+*after* an event has been handled.  It's assumed that there will be at least
+one `wait-for` in the body of your test (otherwise you don't need this macro
+at all).
+
+Note: unlike regular ClojureScript `cljs.test/async` tests, `wait-for` takes
+care of calling `(done)` for you: you don't need to do anything specific to
+handle the fact that your test is asynchronous, other than make sure that all
+your assertions happen with `wait-for` blocks.
+
+This macro is applicable for events that do run some async behaviour (usually outside or re-frame)
+within the event.
+
+From the todomvc example:
+
+    (deftest basic--async
+      (rf-test/run-test-async
+        (rf/dispatch-sync [:initialise-db])
+        
+Use the `run-test-async` macro to construct the tests and initialise the app state
+note that the `dispatch-sync` must be used as this macro does not run the dispatch
+immediately like `run-test-sync`.
+
     
+        (let [showing         (rf/subscribe [:showing])
+              sorted-todos    (rf/subscribe [:sorted-todos])
+              todos           (rf/subscribe [:todos])
+              visible-todos   (rf/subscribe [:visible-todos])
+              all-complete?   (rf/subscribe [:all-complete?])
+              completed-count (rf/subscribe [:completed-count])
+              footer-counts   (rf/subscribe [:footer-counts])]
+          
+Define subscriptions to the app state
+
+          (is (= :all @showing))
+          (is (empty? @sorted-todos))
+          (is (empty? @todos))
+          (is (empty? @visible-todos))
+          (is (= 0 @completed-count))
+          
+Assert the initial state
+    
+          (rf/dispatch [:add-todo "write first test"])
+          
+Dispatch the event that you want to test, remember that re-frame will not process
+this event immediately, and need to use the `wait-for` macro to continue the tests.
+          
+          (rf-test/wait-for [:add-todo]
+          
+Wait for the `:add-todo` event to be dispatched          
+          
+            (is (= [{:id 1, :title "write first test", :done false}] @todos))
+            
+Test that the dispatch has mutated the state in the way that we expect.    
