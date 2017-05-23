@@ -126,7 +126,9 @@ this event immediately, and need to use the `wait-for` macro to continue the tes
           
           (rf-test/wait-for [:add-todo]
           
-Wait for the `:add-todo` event to be dispatched          
+Wait for the `:add-todo` event to be dispatched (note, in the 
+use of this macro we would typically wait for an event that had been triggered
+by the successful return of the async event).        
           
             (is (= [{:id 1, :title "write first test", :done false}] @todos))
             
