@@ -1,8 +1,7 @@
 (ns todomvc.db
     (:require
-      #?(:cljs [cljs.reader])
-      #?(:cljs [cljs.spec :as s]
-         :clj  [clojure.spec :as s])
+      [cljs.reader]
+      [cljs.spec :as s]
       [re-frame.core :as re-frame]))
 
 
@@ -59,17 +58,17 @@
 (def ls-key "todos-reframe")     ;; localstore key
 
 (defn localstore->todos
-  "Read in todos from localstore, and process into a map we can merge into app-db."
-  []
-  #?(:cljs (some->> (.getItem js/localStorage ls-key)
-                    (cljs.reader/read-string) ;; stored as an EDN map.
-                    (into (sorted-map))       ;; map -> sorted-map
-                    (hash-map :todos))))      ;; access via the :todos key
+      "Read in todos from localstore, and process into a map we can merge into app-db."
+      []
+      (some->> (.getItem js/localStorage ls-key)
+               (cljs.reader/read-string)                    ;; stored as an EDN map.
+               (into (sorted-map))                          ;; map -> sorted-map
+               (hash-map :todos)))                          ;; access via the :todos key
 
 (defn todos->local-store
-  "Puts todos into localStorage"
-  [todos _]
-  #?(:cljs (.setItem js/localStorage ls-key (str todos)))) ;; sorted-map writen as an EDN map
+      "Puts todos into localStorage"
+      [todos _]
+      (.setItem js/localStorage ls-key (str todos)))        ;; sorted-map writen as an EDN map
 
 ;; register a coeffect handler which will load a value from localstore
 ;; To see it used look in events.clj at the event handler for `:initialise-db`
@@ -78,7 +77,7 @@
   (fn [cofx _]
       "Read in todos from localstore, and process into a map we can merge into app-db."
       (assoc cofx :local-store-todos
-             #?(:cljs (into (sorted-map)
-                            (some->> (.getItem js/localStorage ls-key)
-                                     (cljs.reader/read-string) ;; stored as an EDN map.
-                                     ))))))
+             (into (sorted-map)
+                   (some->> (.getItem js/localStorage ls-key)
+                            (cljs.reader/read-string)       ;; stored as an EDN map.
+                            )))))

@@ -3,8 +3,7 @@
     [todomvc.db    :refer [default-value todos->local-store]]
     [re-frame.core :refer [reg-event-db reg-event-fx inject-cofx path trim-v
                            after debug]]
-    #?(:cljs [cljs.spec  :as s]
-       :clj  [clojure.spec :as s])))
+    [cljs.spec :as s]))
 
 
 ;; -- Interceptors --------------------------------------------------------------
@@ -33,8 +32,7 @@
 (def todo-interceptors [check-spec-interceptor               ;; ensure the spec is still valid
                         (path :todos)                        ;; 1st param to handler will be the value from this path
                         ->local-store                        ;; write todos to localstore
-                        #?(:cljs                             ;; look in your browser console for debug logs
-                           (when ^boolean js/goog.DEBUG debug))
+                        (when ^boolean js/goog.DEBUG debug)  ;; look in your browser console for debug logs
                         trim-v])                             ;; removes first (event id) element from the event vec
 
 

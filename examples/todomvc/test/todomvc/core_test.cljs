@@ -1,6 +1,5 @@
 (ns todomvc.core-test
-  (:require #?(:cljs [cljs.test :refer-macros [deftest is]]
-               :clj  [clojure.test :refer [deftest is]])
+  (:require [cljs.test :refer-macros [deftest is]]
             [day8.re-frame.test :as rf-test]
             [re-frame.core :as rf]
             todomvc.db
