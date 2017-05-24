@@ -10,10 +10,12 @@ you have written on the state of the application.
 
 In general a re-frame test would
 
- 1. subscribe to some state
- 2. assert the initial state
- 3. dispatch an event
- 4. assert the the state has changed
+ 1. run some test fixtures
+ 2. subscribe to some state
+ 3. assert the initial state
+ 4. dispatch an event
+ 5. assert the the state has changed
+ 6. reset the app state so there is no interaction between tests
  
  
 ## Implementation
@@ -36,13 +38,29 @@ event.
 
 From the todomvc example:
 
+    (defn test-fixtures
+      []
+      ;; change this coeffect to make tests start with nothing
+      (rf/reg-cofx
+        :local-store-todos
+        (fn [cofx _]
+          "Read in todos from localstore, and process into a map we can merge into app-db."
+          (assoc cofx :local-store-todos
+                      (sorted-map)))))
+
+Define some test-fixtures in this case we have to ignore the localstore
+in the tests.
+
     (deftest basic--sync
       (rf-test/run-test-sync
+        (test-fixtures)
         (rf/dispatch [:initialise-db])
         
 Use the `run-test-sync` macro to construct the tests and initialise the app state
 note that the `dispatch` will be handled before the following code is executed, 
-effectively turning it into a `dispatch-sync`
+effectively turning it into a `dispatch-sync`. Also any changes to the database
+and registrations will be rolled back at the termination of the test, therefore 
+our fixtures are run within the `run-test-sync` macro.
     
         (let [showing         (rf/subscribe [:showing])
               sorted-todos    (rf/subscribe [:sorted-todos])
@@ -96,11 +114,14 @@ From the todomvc example:
 
     (deftest basic--async
       (rf-test/run-test-async
+        (test-fixtures)
         (rf/dispatch-sync [:initialise-db])
         
 Use the `run-test-async` macro to construct the tests and initialise the app state
 note that the `dispatch-sync` must be used as this macro does not run the dispatch
-immediately like `run-test-sync`.
+immediately like `run-test-sync`. Also any changes to the database
+and registrations will be rolled back at the termination of the test, therefore
+our fixtures are run within the `run-test-async` macro.
 
     
         (let [showing         (rf/subscribe [:showing])
@@ -135,8 +156,6 @@ by the successful return of the async event).
             (is (= [{:id 1, :title "write first test", :done false}] @todos))
             
 Test that the dispatch has mutated the state in the way that we expect.    
-
-
 
 ## Running the CLJS tests with Karma
 

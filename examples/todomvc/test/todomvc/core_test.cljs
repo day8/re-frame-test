@@ -5,16 +5,20 @@
             todomvc.db
             todomvc.events
             todomvc.subs))
-;; change this coeffect to make tests start with nothing
-(rf/reg-cofx
-  :local-store-todos
-  (fn [cofx _]
+
+(defn test-fixtures
+  []
+  ;; change this coeffect to make tests start with nothing
+  (rf/reg-cofx
+    :local-store-todos
+    (fn [cofx _]
       "Read in todos from localstore, and process into a map we can merge into app-db."
       (assoc cofx :local-store-todos
-             (sorted-map))))
+                  (sorted-map)))))
 
 (deftest basic--sync
   (rf-test/run-test-sync
+    (test-fixtures)
     (rf/dispatch [:initialise-db])
 
     (let [showing         (rf/subscribe [:showing])
@@ -85,6 +89,7 @@
 
 (deftest basic--async
   (rf-test/run-test-async
+    (test-fixtures)
     (rf/dispatch-sync [:initialise-db])
 
     (let [showing         (rf/subscribe [:showing])
