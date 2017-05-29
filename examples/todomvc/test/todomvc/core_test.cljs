@@ -21,6 +21,7 @@
     (test-fixtures)
     (rf/dispatch [:initialise-db])
 
+    ;; Define subscriptions to the app state
     (let [showing         (rf/subscribe [:showing])
           sorted-todos    (rf/subscribe [:sorted-todos])
           todos           (rf/subscribe [:todos])
@@ -28,6 +29,8 @@
           all-complete?   (rf/subscribe [:all-complete?])
           completed-count (rf/subscribe [:completed-count])
           footer-counts   (rf/subscribe [:footer-counts])]
+
+      ;;Assert the initial state
       (is (= :all @showing))
       (is (empty? @sorted-todos))
       (is (empty? @todos))
@@ -36,7 +39,11 @@
       (is (= 0 @completed-count))
       (is (= [0 0] @footer-counts))
 
+      ;;Dispatch the event that you want to test, remember that `re-frame-test`
+      ;;will process this event immediately.
       (rf/dispatch [:add-todo "write first test"])
+
+      ;;Test that the dispatch has mutated the state in the way that we expect.
       (is (= 1 (count @todos) (count @visible-todos) (count @sorted-todos)))
       (is (= 0 @completed-count))
       (is (= [1 0] @footer-counts))
@@ -92,6 +99,7 @@
     (test-fixtures)
     (rf/dispatch-sync [:initialise-db])
 
+    ;;Define subscriptions to the app state
     (let [showing         (rf/subscribe [:showing])
           sorted-todos    (rf/subscribe [:sorted-todos])
           todos           (rf/subscribe [:todos])
@@ -99,20 +107,29 @@
           all-complete?   (rf/subscribe [:all-complete?])
           completed-count (rf/subscribe [:completed-count])
           footer-counts   (rf/subscribe [:footer-counts])]
-      (is (= :all @showing))
-      (is (empty? @sorted-todos))
-      (is (empty? @todos))
-      (is (empty? @visible-todos))
-      (is (= 0 @completed-count))
 
-      (rf/dispatch [:add-todo "write first test"])
-      (rf-test/wait-for [:add-todo]
-        (is (= [{:id 1, :title "write first test", :done false}] @todos))
+         ;;Assert the initial state
+         (is (= :all @showing))
+         (is (empty? @sorted-todos))
+         (is (empty? @todos))
+         (is (empty? @visible-todos))
+         (is (= 0 @completed-count))
 
-        (rf/dispatch [:add-todo "write second teXt"])
-        (rf-test/wait-for [:add-todo]
-          (is (= 2 (count @todos)))
-          (is (= "write second teXt" (:title (second @todos))))
+         ;;Dispatch the event that you want to test, remember
+         ;;that re-frame will not process this event immediately,
+         ;;and need to use the `wait-for` macro to continue the tests.
+         (rf/dispatch [:add-todo "write first test"])
+
+
+         ;;Wait for the `:add-todo` event to be dispatched
+         ;;(note, in the use of this macro we would typically wait for
+         ;;an event that had been triggered by the successful return of
+         ;;the async event).
+         (rf-test/wait-for [:add-todo]
+
+          ;;Test that the dispatch has mutated the state in the way
+          ;;that we expect.
+          (is (= [{:id 1, :title "write first test", :done false}] @todos))
 
           (rf/dispatch [:save 2 "write second test"])
           (rf-test/wait-for [:save]

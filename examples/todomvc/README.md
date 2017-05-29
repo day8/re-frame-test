@@ -43,7 +43,7 @@ A [re-frame](https://github.com/Day8/re-frame) implementation of [TodoMVC](http:
 
 2. run the karma cli
    ```
-   karma start --reporters junit,dots
+   karma start
    ```
 
 
