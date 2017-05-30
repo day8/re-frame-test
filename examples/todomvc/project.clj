@@ -34,6 +34,7 @@
             :figwheel {:server-port 3450
              :repl        true}
 
+  :jvm-opts ^:replace ["-Xms256m" "-Xmx2g"]
 
   :clean-targets ^{:protect false} ["resources/public/js" "target" "resources/public/karma"]
 
