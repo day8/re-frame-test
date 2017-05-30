@@ -5,10 +5,10 @@ dependencies:
     - node_modules
 test:
   override:
-    - lein karma-once:
-        pwd: examples/todomvc
-    - karma start --single-run --reporters junit,dots:
-        pwd: examples/todomvc
+#    - lein karma-once:
+#        pwd: examples/todomvc
+#    - karma start --single-run --reporters junit,dots:
+#        pwd: examples/todomvc
     - lein karma-once
     - karma start --single-run --reporters junit,dots
     - lein test
