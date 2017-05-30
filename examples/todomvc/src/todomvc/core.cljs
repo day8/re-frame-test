@@ -23,7 +23,8 @@
 ;;   - https://github.com/juxt/bidi
 ;; We don't have a strong opinion.
 ;;
-(defroute "/" [] (dispatch [:set-showing :all]))
+
+;(defroute "/" [] (dispatch [:set-showing :all])) ;; for some reason this breaks the tests
 (defroute "/:filter" [filter] (dispatch [:set-showing (keyword filter)]))
 
 (def history

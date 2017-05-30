@@ -131,25 +131,31 @@
           ;;that we expect.
           (is (= [{:id 1, :title "write first test", :done false}] @todos))
 
-          (rf/dispatch [:save 2 "write second test"])
-          (rf-test/wait-for [:save]
-            (is (= "write second test" (:title (second @todos))))
+          (rf/dispatch [:add-todo "write second teXt"])
+            (rf-test/wait-for [:add-todo]
+              (is (= 2 (count @todos) (count @visible-todos) (count @sorted-todos)))
+              (is (= 0 @completed-count))
+              (is (= [2 0] @footer-counts))
+              (is (= {:id 2, :title "write second teXt", :done false}
+                     (second @todos)))
 
-            (rf/dispatch [:toggle-done 1])
-            (rf-test/wait-for [:toggle-done]
-              (is (= true (:done (first @todos))))
+              (rf/dispatch [:save 2 "write second test"])
+              (rf-test/wait-for [:save]
+                (is (= "write second test" (:title (second @todos))))
 
-              (rf/dispatch [:set-showing :active])
-              (rf-test/wait-for [:set-showing]
-                (is (= :active @showing))
-                (is (= 1 (count @visible-todos)))
-                (is (= 1 @completed-count))
-                (is (= {:id 2, :title "write second test", :done false}
-                       (first @visible-todos)))
-
-                (rf/dispatch [:set-showing :done])
-                (rf-test/wait-for [:set-showing]
-                  (is (= :done @showing))
-                  (is (= 1 (count @visible-todos)))
-                  (is (= {:id 1, :title "write first test", :done true}
-                         (first @visible-todos))))))))))))
+                (rf/dispatch [:toggle-done 1])
+                (rf-test/wait-for [:toggle-done]
+                  (is (= true (:done (first @todos))))
+                  (rf/dispatch [:set-showing :active])
+                  (rf-test/wait-for [:set-showing]
+                    (is (= :active @showing))
+                    (is (= 1 (count @visible-todos)))
+                    (is (= 1 @completed-count))
+                    (is (= {:id 2, :title "write second test", :done false}
+                           (first @visible-todos)))
+                    (rf/dispatch [:set-showing :done])
+                    (rf-test/wait-for [:set-showing]
+                      (is (= :done @showing))
+                      (is (= 1 (count @visible-todos)))
+                      (is (= {:id 1, :title "write first test", :done true}
+                      (first @visible-todos))))))))))))

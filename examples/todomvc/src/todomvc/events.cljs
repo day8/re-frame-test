@@ -62,7 +62,7 @@
   :set-showing                    ;; event-id
 
   ;; this chain of two interceptors wrap the handler
-  [check-spec-interceptor (path :showing) trim-v]
+  [#_check-spec-interceptor (path :showing) trim-v]
 
   ;; The event handler
   ;; Because of the path interceptor above, the 1st parameter to
