@@ -144,9 +144,7 @@
       (rf/reg-event-fx :do-stuff
                        (fn [{:keys [db] :as cofx} event]
                          ;; Dispatch an event using cofx
-                         (rf/dispatch [:do-more-stuff])
-                         {}
-                         #_{:dispatch [:do-more-stuff]}))
+                         {:dispatch [:do-more-stuff]}))
       (rf/reg-event-db :do-more-stuff
                        (fn [db _] (assoc db :success true)))
 
