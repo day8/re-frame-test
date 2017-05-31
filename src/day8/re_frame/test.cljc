@@ -63,6 +63,7 @@
                       :max-wait-for-depth (atom 0)
                       :now-waiting-for    (atom nil)}]
     #?(:clj  (with-temp-re-frame-state
+               (reset! re-frame.db/app-db {})
                (let [done-promise (promise)
                      executor     (Executors/newSingleThreadExecutor)
                      fail-ex      (atom nil)
@@ -96,6 +97,7 @@
 
        :cljs (test/async done
                (let [restore-fn (rf/make-restore-fn)]
+                 (reset! re-frame.db/app-db {})
                  (binding [*test-context* (assoc test-context :done (fn [] (restore-fn) (done)))]
                    (f)))))))
 
@@ -269,6 +271,7 @@
 
 (defn run-test-sync* [f]
   (day8.re-frame.test/with-temp-re-frame-state
+    (reset! re-frame.db/app-db {})
     ;; Bypass the actual re-frame EventQueue and use a local alternative over
     ;; which we have full control.
     (let [my-queue     (atom rf.int/empty-queue)
