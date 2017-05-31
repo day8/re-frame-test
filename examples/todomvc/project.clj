@@ -4,7 +4,7 @@
                  [reagent "0.6.0-rc"]
                  [re-frame "0.9.3"]
                  [binaryage/devtools "0.8.1"]
-                 [day8.re-frame/test "0.1.3"]
+                 [day8.re-frame/test "0.1.5"]
                  [secretary "1.2.3"]]
 
   :plugins [[lein-cljsbuild "1.1.4"]
