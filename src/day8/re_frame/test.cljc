@@ -271,23 +271,17 @@
   (day8.re-frame.test/with-temp-re-frame-state
     ;; Bypass the actual re-frame EventQueue and use a local alternative over
     ;; which we have full control.
-    (let [my-queue (atom rf.int/empty-queue)]
-      (with-redefs [rf/dispatch (fn [argv]
-                                  (swap! my-queue conj argv)
-                                  (when-not *handling*
-                                    (binding [*handling* true]
-                                      (loop []
-                                        (when-let [queue-head (dequeue! my-queue)]
-                                          (rf.router/dispatch-sync queue-head)
-                                          (recur))))))
-                    rf.router/dispatch (fn [argv]
-                                         (swap! my-queue conj argv)
-                                         (when-not *handling*
-                                           (binding [*handling* true]
-                                             (loop []
-                                               (when-let [queue-head (dequeue! my-queue)]
-                                                 (rf.router/dispatch-sync queue-head)
-                                                 (recur))))))]
+    (let [my-queue     (atom rf.int/empty-queue)
+          new-dispatch (fn [argv]
+                         (swap! my-queue conj argv)
+                         (when-not *handling*
+                           (binding [*handling* true]
+                             (loop []
+                               (when-let [queue-head (dequeue! my-queue)]
+                                 (rf.router/dispatch-sync queue-head)
+                                 (recur))))))]
+      (with-redefs [rf/dispatch        new-dispatch
+                    rf.router/dispatch new-dispatch]
         (f)))))
 
 
