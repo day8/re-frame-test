@@ -3,9 +3,9 @@
   (:require #?(:cljs [cljs.test :as test]
                :clj  [clojure.test :as test])
             [re-frame.core :as rf]
-            [re-frame.db :as rf-db]
-            [re-frame.interop :as rf-int]
-            [re-frame.registrar :as rf-registrar])
+            [re-frame.router :as rf.router]
+            [re-frame.db :as rf.db]
+            [re-frame.interop :as rf.int])
   #?(:clj (:import [java.util.concurrent Executors TimeUnit])))
 
 
@@ -67,13 +67,13 @@
                      executor     (Executors/newSingleThreadExecutor)
                      fail-ex      (atom nil)
                      test-context (assoc test-context :done #(deliver done-promise ::done))]
-                 (with-redefs [rf-int/executor executor]
+                 (with-redefs [rf.int/executor executor]
                    ;; Execute the test code itself on the same thread as the
                    ;; re-frame event handlers run, so that we accurately
                    ;; simulate the single-threaded JS environment and also so
                    ;; that we don't have to worry about making the JVM
                    ;; implementation of the re-frame EventQueue thread-safe.
-                   (rf-int/next-tick #(try
+                   (rf.int/next-tick #(try
                                         (binding [*test-context* test-context]
                                           (f))
                                         (catch Throwable t
@@ -271,15 +271,23 @@
   (day8.re-frame.test/with-temp-re-frame-state
     ;; Bypass the actual re-frame EventQueue and use a local alternative over
     ;; which we have full control.
-    (let [my-queue (atom rf-int/empty-queue)]
+    (let [my-queue (atom rf.int/empty-queue)]
       (with-redefs [rf/dispatch (fn [argv]
                                   (swap! my-queue conj argv)
                                   (when-not *handling*
                                     (binding [*handling* true]
                                       (loop []
                                         (when-let [queue-head (dequeue! my-queue)]
-                                          (rf/dispatch-sync queue-head)
-                                          (recur))))))]
+                                          (rf.router/dispatch-sync queue-head)
+                                          (recur))))))
+                    rf.router/dispatch (fn [argv]
+                                         (swap! my-queue conj argv)
+                                         (when-not *handling*
+                                           (binding [*handling* true]
+                                             (loop []
+                                               (when-let [queue-head (dequeue! my-queue)]
+                                                 (rf.router/dispatch-sync queue-head)
+                                                 (recur))))))]
         (f)))))
 
 

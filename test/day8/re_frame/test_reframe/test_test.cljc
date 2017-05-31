@@ -108,30 +108,54 @@
 
 (deftest run-test-sync--event-handler-dispatches-event
   (assert-captured-test-results
-   (fn [results]
-     (is (= (map #(select-keys % [:type :expected]) results)
-            [{:type :begin-test-var}
-             {:type :pass, :expected '(= true @success)}
-             {:type :end-test-var}])))
+    (fn [results]
+      (is (= (map #(select-keys % [:type :expected]) results)
+             [{:type :begin-test-var}
+              {:type :pass, :expected '(= true @success)}
+              {:type :end-test-var}])))
 
-   (rf-test/with-temp-re-frame-state
-     (rf/reg-event-ctx :do-stuff
-       (fn [ctx]
-         ;; In the real world, you should use effectful event
-         ;; handlers to `dispatch` as a result of an event, but the
-         ;; net result here is the same.
-         (rf/dispatch [:do-more-stuff])
-         ctx))
-     (rf/reg-event-db :do-more-stuff
-       (fn [db _] (assoc db :success true)))
+    (rf-test/with-temp-re-frame-state
+      (rf/reg-event-ctx :do-stuff
+                        (fn [ctx]
+                          ;; In the real world, you should use effectful event
+                          ;; handlers to `dispatch` as a result of an event, but the
+                          ;; net result here is the same.
+                          (rf/dispatch [:do-more-stuff])
+                          ctx))
+      (rf/reg-event-db :do-more-stuff
+                       (fn [db _] (assoc db :success true)))
 
-     (rf/reg-sub :success (fn [db _] (:success db)))
+      (rf/reg-sub :success (fn [db _] (:success db)))
 
-     (let [success (rf/subscribe [:success])]
-       (rf-test/run-test-sync
-        (rf/dispatch [:do-stuff])
-        (is (= true @success)))))))
+      (let [success (rf/subscribe [:success])]
+        (rf-test/run-test-sync
+          (rf/dispatch [:do-stuff])
+          (is (= true @success)))))))
 
+(deftest run-test-sync--event-handler-dispatches-event-cofx
+  (assert-captured-test-results
+    (fn [results]
+      (is (= (map #(select-keys % [:type :expected]) results)
+             [{:type :begin-test-var}
+              {:type :pass, :expected '(= true @success)}
+              {:type :end-test-var}])))
+
+    (rf-test/with-temp-re-frame-state
+      (rf/reg-event-fx :do-stuff
+                       (fn [{:keys [db] :as cofx} event]
+                         ;; Dispatch an event using cofx
+                         (rf/dispatch [:do-more-stuff])
+                         {}
+                         #_{:dispatch [:do-more-stuff]}))
+      (rf/reg-event-db :do-more-stuff
+                       (fn [db _] (assoc db :success true)))
+
+      (rf/reg-sub :success (fn [db _] (:success db)))
+
+      (let [success (rf/subscribe [:success])]
+        (rf-test/run-test-sync
+          (rf/dispatch [:do-stuff])
+          (is (= true @success)))))))
 
 (deftest run-test-sync--error-in-event-handler
   (assert-captured-test-results
