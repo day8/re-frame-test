@@ -38,6 +38,7 @@ event.
 
 From the todomvc example:
 
+```Clojure
     (defn test-fixtures
       []
       ;; change this coeffect to make tests start with nothing
@@ -47,21 +48,25 @@ From the todomvc example:
           "Read in todos from localstore, and process into a map we can merge into app-db."
           (assoc cofx :local-store-todos
                       (sorted-map)))))
+```
 
 Define some test-fixtures. In this case we have to ignore the localstore
 in the tests.
 
+```Clojure
     (deftest basic--sync
       (rf-test/run-test-sync
         (test-fixtures)
         (rf/dispatch [:initialise-db])
-        
+```
+
 Use the `run-test-sync` macro to construct the tests and initialise the app state.
 Note that, the `dispatch` will be handled before the following code is executed, 
 effectively turning it into a `dispatch-sync`. Also any changes to the database
 and registrations will be rolled back at the termination of the test, therefore 
 our fixtures are run within the `run-test-sync` macro.
-    
+
+```Clojure
             ;; Define subscriptions to the app state
             (let [showing         (rf/subscribe [:showing])
                   sorted-todos    (rf/subscribe [:sorted-todos])
@@ -90,7 +95,7 @@ our fixtures are run within the `run-test-sync` macro.
               (is (= [1 0] @footer-counts))
               (is (= {:id 1, :title "write first test", :done false}
                      (first @todos)))
-
+```
     
 ### run-test-async
 This macro is applicable for events that do run some async behaviour 
@@ -109,18 +114,20 @@ your assertions happen with `wait-for` blocks.
 
 From the todomvc example:
 
+```Clojure
     (deftest basic--async
       (rf-test/run-test-async
         (test-fixtures)
         (rf/dispatch-sync [:initialise-db])
-        
+```
+
 Use the `run-test-async` macro to construct the tests and initialise the app state
 note that the `dispatch-sync` must be used as this macro does not run the dispatch
 immediately like `run-test-sync`. Also any changes to the database
 and registrations will be rolled back at the termination of the test, therefore
 our fixtures are run within the `run-test-async` macro.
 
-    
+```Clojure    
         ;;Define subscriptions to the app state
         (let [showing         (rf/subscribe [:showing])
               sorted-todos    (rf/subscribe [:sorted-todos])
@@ -152,7 +159,8 @@ our fixtures are run within the `run-test-async` macro.
             ;;Test that the dispatch has mutated the state in the way 
             ;;that we expect.    
             (is (= [{:id 1, :title "write first test", :done false}] @todos))
-            
+```
+
 Here we have assumed that the `:add-todo` event will make some sort of async 
 call which will in turn generate an `add-todo-finished` event when it has finished.
 This is not actually the case in the example code.
