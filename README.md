@@ -1,6 +1,7 @@
 # re-frame-test
 
 [![CircleCI](https://circleci.com/gh/Day8/re-frame-test.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-test)
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
 
 `re-frame-test` is a library which provides helper functions for testing re-frame projects
 
