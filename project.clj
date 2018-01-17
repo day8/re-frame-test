@@ -1,11 +1,11 @@
-(defproject day8.re-frame/test "0.1.4-SNAPSHOT"
+(defproject day8.re-frame/test "0.1.6-SNAPSHOT"
   :description "re-frame testing tools"
   :url "https://github.com/Day8/re-frame-test"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.89"]
-                 [re-frame "0.8.0"]]
+                 [re-frame "0.9.3"]]
   :plugins [[lein-npm "0.6.2"]
             [lein-cljsbuild "1.1.3"]]
 

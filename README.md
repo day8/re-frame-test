@@ -1,6 +1,7 @@
 # re-frame-test
 
 [![CircleCI](https://circleci.com/gh/Day8/re-frame-test.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-test)
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
 
 This library provides utilities 
 for testing [re-re-frame applications](https://github.com/Day8/re-frame).
@@ -38,59 +39,64 @@ event.
 
 From the todomvc example:
 
-    (defn test-fixtures
-      []
-      ;; change this coeffect to make tests start with nothing
-      (rf/reg-cofx
-        :local-store-todos
-        (fn [cofx _]
-          "Read in todos from localstore, and process into a map we can merge into app-db."
-          (assoc cofx :local-store-todos
-                      (sorted-map)))))
+```Clojure
+(defn test-fixtures
+  []
+  ;; change this coeffect to make tests start with nothing
+  (rf/reg-cofx
+    :local-store-todos
+    (fn [cofx _]
+      "Read in todos from localstore, and process into a map we can merge into app-db."
+      (assoc cofx :local-store-todos
+                  (sorted-map)))))
+```
 
 Define some test-fixtures. In this case we have to ignore the localstore
 in the tests.
 
-    (deftest basic--sync
-      (rf-test/run-test-sync
-        (test-fixtures)
-        (rf/dispatch [:initialise-db])
-        
+```Clojure
+(deftest basic--sync
+  (rf-test/run-test-sync
+    (test-fixtures)
+    (rf/dispatch [:initialise-db])
+```
+
 Use the `run-test-sync` macro to construct the tests and initialise the app state.
 Note that, the `dispatch` will be handled before the following code is executed, 
 effectively turning it into a `dispatch-sync`. Also any changes to the database
 and registrations will be rolled back at the termination of the test, therefore 
 our fixtures are run within the `run-test-sync` macro.
-    
-            ;; Define subscriptions to the app state
-            (let [showing         (rf/subscribe [:showing])
-                  sorted-todos    (rf/subscribe [:sorted-todos])
-                  todos           (rf/subscribe [:todos])
-                  visible-todos   (rf/subscribe [:visible-todos])
-                  all-complete?   (rf/subscribe [:all-complete?])
-                  completed-count (rf/subscribe [:completed-count])
-                  footer-counts   (rf/subscribe [:footer-counts])] 
-                 
-              ;;Assert the initial state
-              (is (= :all @showing))
-              (is (empty? @sorted-todos))
-              (is (empty? @todos))
-              (is (empty? @visible-todos))
-              (is (= false (boolean @all-complete?)))
-              (is (= 0 @completed-count))
-              (is (= [0 0] @footer-counts)) 
-                 
-              ;;Dispatch the event that you want to test, remember that `re-frame-test` 
-              ;;will process this event immediately.
-              (rf/dispatch [:add-todo "write first test"])
-              
-              ;;Test that the dispatch has mutated the state in the way that we expect.
-              (is (= 1 (count @todos) (count @visible-todos) (count @sorted-todos)))
-              (is (= 0 @completed-count))
-              (is (= [1 0] @footer-counts))
-              (is (= {:id 1, :title "write first test", :done false}
-                     (first @todos)))
 
+```Clojure
+        ;; Define subscriptions to the app state
+        (let [showing         (rf/subscribe [:showing])
+              sorted-todos    (rf/subscribe [:sorted-todos])
+              todos           (rf/subscribe [:todos])
+              visible-todos   (rf/subscribe [:visible-todos])
+              all-complete?   (rf/subscribe [:all-complete?])
+              completed-count (rf/subscribe [:completed-count])
+              footer-counts   (rf/subscribe [:footer-counts])] 
+                 
+          ;;Assert the initial state
+          (is (= :all @showing))
+          (is (empty? @sorted-todos))
+          (is (empty? @todos))
+          (is (empty? @visible-todos))
+          (is (= false (boolean @all-complete?)))
+          (is (= 0 @completed-count))
+          (is (= [0 0] @footer-counts)) 
+             
+          ;;Dispatch the event that you want to test, remember that `re-frame-test` 
+          ;;will process this event immediately.
+          (rf/dispatch [:add-todo "write first test"])
+              
+          ;;Test that the dispatch has mutated the state in the way that we expect.
+          (is (= 1 (count @todos) (count @visible-todos) (count @sorted-todos)))
+          (is (= 0 @completed-count))
+          (is (= [1 0] @footer-counts))
+          (is (= {:id 1, :title "write first test", :done false}
+                 (first @todos)))
+```
     
 ### run-test-async
 
@@ -110,50 +116,53 @@ your assertions happen with `wait-for` blocks.
 
 From the todomvc example:
 
-    (deftest basic--async
-      (rf-test/run-test-async
-        (test-fixtures)
-        (rf/dispatch-sync [:initialise-db])
-        
+```Clojure
+(deftest basic--async
+  (rf-test/run-test-async
+    (test-fixtures)
+    (rf/dispatch-sync [:initialise-db])
+```
+
 Use the `run-test-async` macro to construct the tests and initialise the app state
 note that the `dispatch-sync` must be used as this macro does not run the dispatch
 immediately like `run-test-sync`. Also any changes to the database
 and registrations will be rolled back at the termination of the test, therefore
 our fixtures are run within the `run-test-async` macro.
 
-    
-        ;;Define subscriptions to the app state
-        (let [showing         (rf/subscribe [:showing])
-              sorted-todos    (rf/subscribe [:sorted-todos])
-              todos           (rf/subscribe [:todos])
-              visible-todos   (rf/subscribe [:visible-todos])
-              all-complete?   (rf/subscribe [:all-complete?])
-              completed-count (rf/subscribe [:completed-count])
-              footer-counts   (rf/subscribe [:footer-counts])]
+```Clojure    
+    ;;Define subscriptions to the app state
+    (let [showing         (rf/subscribe [:showing])
+          sorted-todos    (rf/subscribe [:sorted-todos])
+          todos           (rf/subscribe [:todos])
+          visible-todos   (rf/subscribe [:visible-todos])
+          all-complete?   (rf/subscribe [:all-complete?])
+          completed-count (rf/subscribe [:completed-count])
+          footer-counts   (rf/subscribe [:footer-counts])]
           
-          ;;Assert the initial state
-          (is (= :all @showing))
-          (is (empty? @sorted-todos))
-          (is (empty? @todos))
-          (is (empty? @visible-todos))
-          (is (= 0 @completed-count))
+      ;;Assert the initial state
+      (is (= :all @showing))
+      (is (empty? @sorted-todos))
+      (is (empty? @todos))
+      (is (empty? @visible-todos))
+      (is (= 0 @completed-count))
                     
-          ;;Dispatch the event that you want to test, remember 
-          ;;that re-frame will not process this event immediately, 
-          ;;and need to use the `wait-for` macro to continue the tests.
-          (rf/dispatch [:add-todo "write first test"])
+      ;;Dispatch the event that you want to test, remember 
+      ;;that re-frame will not process this event immediately, 
+      ;;and need to use the `wait-for` macro to continue the tests.
+      (rf/dispatch [:add-todo "write first test"])
           
           
-          ;;Wait for the `:add-todo` event to be dispatched 
-          ;;(note, in the use of this macro we would typically wait for 
-          ;;an event that had been triggered by the successful return of 
-          ;;the async event).        
-          (rf-test/wait-for [:add-todo-finished]
+      ;;Wait for the `:add-todo` event to be dispatched 
+      ;;(note, in the use of this macro we would typically wait for 
+      ;;an event that had been triggered by the successful return of 
+      ;;the async event).        
+      (rf-test/wait-for [:add-todo-finished]
           
-            ;;Test that the dispatch has mutated the state in the way 
-            ;;that we expect.    
-            (is (= [{:id 1, :title "write first test", :done false}] @todos))
-            
+        ;;Test that the dispatch has mutated the state in the way 
+        ;;that we expect.    
+        (is (= [{:id 1, :title "write first test", :done false}] @todos))
+```
+
 Here we have assumed that the `:add-todo` event will make some sort of async 
 call which will in turn generate an `add-todo-finished` event when it has finished.
 This is not actually the case in the example code.
@@ -162,7 +171,9 @@ This is not actually the case in the example code.
 
 You will need `npm`, with:
 
-    npm install -g karma karma-cli karma-cljs-test karma-junit-reporter karma-chrome-launcher
+```console
+$ npm install -g karma karma-cli karma-cljs-test karma-junit-reporter karma-chrome-launcher
+```
 
 And you will need Chrome.
 
