@@ -2,28 +2,28 @@
 
 [![CircleCI](https://circleci.com/gh/Day8/re-frame-test.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-test)
 
-`re-frame-test` is a library which provides helper functions for testing re-frame projects
+This library provides utilities 
+for testing [re-re-frame applications](https://github.com/Day8/re-frame).
 
-## Philosopy 
-When testing a re-frame application you often what to test the effects of events
-you have written on the state of the application.
+These utilities:
+  - allow you to use `subscribe` in your tests
+  - allow you to use `dispatch` in your tests
+  - allow you to run tests on both the JVM and JS platforms
+  - allow you to create "end to end" integration tests, involving backend servers
 
-In general a re-frame test would
+For context, please be sure to read the 
+[basic testing tutorial](https://github.com/Day8/re-frame/blob/master/docs/Testing.md) 
+in the main re-frame docs before going any further.
 
- 1. run some test fixtures
- 2. subscribe to some state
- 3. assert the initial state
- 4. dispatch an event
- 5. assert the the state has changed
- 6. reset the app state so there is no interaction between tests
- 
+This library primarily supports the testing of Event Handlers, but Subscription Handlers
+get to come along for the ride.
  
 ## Implementation
 
-`re-frame-test` provides two macros that together with `cljs.test` are useful to write tests with the above 
-philosophy. 
+`re-frame-test` provides two macros which dovetail with `cljs.test`.
  
 ### run-test-sync
+
 Execute `body` as a test, where each `dispatch` call is executed
 synchronously (via `dispatch-sync`), and any subsequent dispatches which are
 caused by that dispatch are also fully handled/executed prior to control flow
@@ -93,6 +93,7 @@ our fixtures are run within the `run-test-sync` macro.
 
     
 ### run-test-async
+
 This macro is applicable for events that do run some async behaviour 
 (usually outside or re-frame, e.g. an http request) within the event.
 
