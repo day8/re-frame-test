@@ -4,7 +4,7 @@
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
 
 This library provides utilities 
-for testing [re-re-frame applications](https://github.com/Day8/re-frame).
+for testing [re-frame applications](https://github.com/Day8/re-frame).
 
 These utilities:
   - allow you to use `subscribe` in your tests
