@@ -190,7 +190,7 @@
     (let [ok-pred   (as-callback-pred ok-ids)
           fail-pred (as-callback-pred failure-ids)
           cb-id     (gensym "wait-for-cb-fn")]
-      (rf/add-post-event-callback cb-id (fn [event _]
+      (rf/add-post-event-callback cb-id (#?(:cljs fn :clj bound-fn) [event _]
                                           ;; (taoensso.timbre/warn "post-event-callback: " event)
                                           (cond (and fail-pred
                                                      (not (test/is (not (fail-pred event))
