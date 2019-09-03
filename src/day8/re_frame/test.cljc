@@ -183,8 +183,9 @@
   ;; `wait-for*` only makes sense in a tail position, this means the test is
   ;; complete, and we can call `(done)`, saving the test author the trouble of
   ;; passing `done` through every single callback.
-  (let [{:keys [done wait-for-depth] :as test-context} (update @*test-context* :wait-for-depth inc)]
-    (swap! *test-context* update :max-wait-for-depth inc)
+  (let [{done :done
+         wait-for-depth :max-wait-for-depth
+         :as test-context} (swap! *test-context* update :max-wait-for-depth inc)]
 
     (let [ok-pred   (as-callback-pred ok-ids)
           fail-pred (as-callback-pred failure-ids)
@@ -204,16 +205,14 @@
                                                   (rf/remove-post-event-callback cb-id)
                                                   (swap! *test-context* assoc :now-waiting-for nil)
                                                   (callback event)
-                                                  (done)
-                                                  ;; (when (= wait-for-depth
-                                                  ;;          (:max-wait-for-depth @test-context))
-                                                  ;;   ;; `callback` has completed with no `wait-for*`
-                                                  ;;   ;; calls, so we're not waiting for anything
-                                                  ;;   ;; further.  Given that `wait-for*` calls are
-                                                  ;;   ;; only valid in tail position, the test must
-                                                  ;;   ;; now be finished.
-                                                  ;;   (done))
-                                                  )
+                                                  (when (= wait-for-depth
+                                                           (:max-wait-for-depth @*test-context*))
+                                                    ;; `callback` has completed with no `wait-for*`
+                                                    ;; calls, so we're not waiting for anything
+                                                    ;; further.  Given that `wait-for*` calls are
+                                                    ;; only valid in tail position, the test must
+                                                    ;; now be finished.
+                                                    (done)))
 
                                                 ;; Test is not interested this event, but we still
                                                 ;; need to wait for the one we *are* interested in.
