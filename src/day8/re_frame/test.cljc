@@ -32,22 +32,18 @@
 
 (def ^:dynamic *test-timeout* 5000)
 
-(def  *test-context*
-  "`*test-context*` is used to communicate internal details of the test between
-  `run-test-async*` and `wait-for*`. It is dynamically bound so that it doesn't
-  need to appear as a lexical argument to a `wait-for` block, since we don't
-  want it to be visible when you're writing tests.  But care must be taken to
-  pass it around lexically across callbacks, since ClojureScript doesn't have
-  `bound-fn`."
+(def test-context*
+  "`test-context*` is used to communicate internal details of the test between
+  `run-test-async*` and `wait-for*`."
   (atom nil))
 
 (defn set-test-context
   [tc]
-  (reset! *test-context* tc))
+  (reset! test-context* tc))
 
 (defn clear-test-context
   []
-  (reset! *test-context* nil))
+  (reset! test-context* nil))
 
 #?(:clj
    (defmacro with-temp-re-frame-state
@@ -101,7 +97,7 @@
                        (throw ex)
                        (test/is (not= ::timeout result)
                                 (str "Test timed out after " *test-timeout* "ms"
-                                     (when-let [ev (:now-waiting-for @*test-context*)]
+                                     (when-let [ev (:now-waiting-for @test-context*)]
                                        (str ", waiting for " (pr-str ev) ".")))))))))
 
        :cljs (test/async
@@ -185,7 +181,7 @@
   ;; passing `done` through every single callback.
   (let [{done :done
          wait-for-depth :max-wait-for-depth
-         :as test-context} (swap! *test-context* update :max-wait-for-depth inc)]
+         :as test-context} (swap! test-context* update :max-wait-for-depth inc)]
 
     (let [ok-pred   (as-callback-pred ok-ids)
           fail-pred (as-callback-pred failure-ids)
@@ -197,16 +193,16 @@
                                                                    "Received failure event")))
                                                 (do
                                                   (rf/remove-post-event-callback cb-id)
-                                                  (swap! *test-context* assoc :now-waiting-for nil)
+                                                  (swap! test-context* assoc :now-waiting-for nil)
                                                   (done))
 
                                                 (ok-pred event)
                                                 (do
                                                   (rf/remove-post-event-callback cb-id)
-                                                  (swap! *test-context* assoc :now-waiting-for nil)
+                                                  (swap! test-context* assoc :now-waiting-for nil)
                                                   (callback event)
                                                   (when (= wait-for-depth
-                                                           (:max-wait-for-depth @*test-context*))
+                                                           (:max-wait-for-depth @test-context*))
                                                     ;; `callback` has completed with no `wait-for*`
                                                     ;; calls, so we're not waiting for anything
                                                     ;; further.  Given that `wait-for*` calls are
@@ -218,7 +214,7 @@
                                                 ;; need to wait for the one we *are* interested in.
                                                 :else
                                                 nil)))
-      (swap! *test-context* assoc :now-waiting-for ok-ids))))
+      (swap! test-context* assoc :now-waiting-for ok-ids))))
 
 
 (defmacro wait-for
