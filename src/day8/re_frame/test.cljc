@@ -25,6 +25,30 @@
         (recur queue-atom)))))
 
 
+
+;;;;
+;;;; Async tests
+;;;;
+
+(def ^:dynamic *test-timeout* 5000)
+
+(def  *test-context*
+  "`*test-context*` is used to communicate internal details of the test between
+  `run-test-async*` and `wait-for*`. It is dynamically bound so that it doesn't
+  need to appear as a lexical argument to a `wait-for` block, since we don't
+  want it to be visible when you're writing tests.  But care must be taken to
+  pass it around lexically across callbacks, since ClojureScript doesn't have
+  `bound-fn`."
+  (atom nil))
+
+(defn set-test-context
+  [tc]
+  (reset! *test-context* tc))
+
+(defn clear-test-context
+  []
+  (reset! *test-context* nil))
+
 #?(:clj
    (defmacro with-temp-re-frame-state
      "Run `body`, but discard whatever effects it may have on re-frame's internal
@@ -39,34 +63,20 @@
         (try
           ~@body
           (finally
+            (clear-test-context)
             (restore-fn#))))))
 
-
-;;;;
-;;;; Async tests
-;;;;
-
-(def ^:dynamic *test-timeout* 5000)
-
-(def ^{:dynamic true, :private true} *test-context*
-  "`*test-context*` is used to communicate internal details of the test between
-  `run-test-async*` and `wait-for*`. It is dynamically bound so that it doesn't
-  need to appear as a lexical argument to a `wait-for` block, since we don't
-  want it to be visible when you're writing tests.  But care must be taken to
-  pass it around lexically across callbacks, since ClojureScript doesn't have
-  `bound-fn`."
-  nil)
-
-
 (defn run-test-async* [f]
-  (let [test-context {:wait-for-depth     0
-                      :max-wait-for-depth (atom 0)
-                      :now-waiting-for    (atom nil)}]
+  (let [initial-test-context {:wait-for-depth     0
+                              :max-wait-for-depth 0
+                              :now-waiting-for    nil}]
     #?(:clj  (with-temp-re-frame-state
                (let [done-promise (promise)
                      executor     (Executors/newSingleThreadExecutor)
                      fail-ex      (atom nil)
-                     test-context (assoc test-context :done #(deliver done-promise ::done))]
+                     initial-test-context (assoc initial-test-context
+                                                 :done
+                                                 #(deliver done-promise ::done))]
                  (with-redefs [rf.int/executor executor]
                    ;; Execute the test code itself on the same thread as the
                    ;; re-frame event handlers run, so that we accurately
@@ -74,8 +84,8 @@
                    ;; that we don't have to worry about making the JVM
                    ;; implementation of the re-frame EventQueue thread-safe.
                    (rf.int/next-tick #(try
-                                        (binding [*test-context* test-context]
-                                          (f))
+                                        (set-test-context initial-test-context)
+                                        (f)
                                         (catch Throwable t
                                           (reset! fail-ex t))))
                    (let [result (deref done-promise *test-timeout* ::timeout)]
@@ -91,13 +101,20 @@
                        (throw ex)
                        (test/is (not= ::timeout result)
                                 (str "Test timed out after " *test-timeout* "ms"
-                                     (when-let [ev @(:now-waiting-for test-context)]
+                                     (when-let [ev (:now-waiting-for @*test-context*)]
                                        (str ", waiting for " (pr-str ev) ".")))))))))
 
-       :cljs (test/async done
-               (let [restore-fn (rf/make-restore-fn)]
-                 (binding [*test-context* (assoc test-context :done (fn [] (restore-fn) (done)))]
-                   (f)))))))
+       :cljs (test/async
+              done
+              (let [restore-fn (rf/make-restore-fn)]
+                (set-test-context
+                 (assoc initial-test-context
+                        :done
+                        (fn []
+                          (clear-test-context)
+                          (restore-fn)
+                          (done))))
+                (f))))))
 
 
 (defmacro run-test-async
@@ -166,41 +183,43 @@
   ;; `wait-for*` only makes sense in a tail position, this means the test is
   ;; complete, and we can call `(done)`, saving the test author the trouble of
   ;; passing `done` through every single callback.
-  (let [{:keys [done] :as test-context} (update *test-context* :wait-for-depth inc)]
-    (swap! (:max-wait-for-depth test-context) inc)
+  (let [{:keys [done wait-for-depth] :as test-context} (update @*test-context* :wait-for-depth inc)]
+    (swap! *test-context* update :max-wait-for-depth inc)
 
     (let [ok-pred   (as-callback-pred ok-ids)
           fail-pred (as-callback-pred failure-ids)
           cb-id     (gensym "wait-for-cb-fn")]
-      (rf/add-post-event-callback cb-id (#?(:cljs fn :clj bound-fn) [event _]
+      (rf/add-post-event-callback cb-id (fn [event _]
+                                          ;; (taoensso.timbre/warn "post-event-callback: " event)
                                           (cond (and fail-pred
                                                      (not (test/is (not (fail-pred event))
                                                                    "Received failure event")))
                                                 (do
                                                   (rf/remove-post-event-callback cb-id)
-                                                  (reset! (:now-waiting-for test-context) nil)
+                                                  (swap! *test-context* assoc :now-waiting-for nil)
                                                   (done))
 
                                                 (ok-pred event)
                                                 (do
                                                   (rf/remove-post-event-callback cb-id)
-                                                  (reset! (:now-waiting-for test-context) nil)
-                                                  (binding [*test-context* test-context]
-                                                    (callback event))
-                                                  (when (= (:wait-for-depth test-context)
-                                                           @(:max-wait-for-depth test-context))
-                                                    ;; `callback` has completed with no `wait-for*`
-                                                    ;; calls, so we're not waiting for anything
-                                                    ;; further.  Given that `wait-for*` calls are
-                                                    ;; only valid in tail position, the test must
-                                                    ;; now be finished.
-                                                    (done)))
+                                                  (swap! *test-context* assoc :now-waiting-for nil)
+                                                  (callback event)
+                                                  (done)
+                                                  ;; (when (= wait-for-depth
+                                                  ;;          (:max-wait-for-depth @test-context))
+                                                  ;;   ;; `callback` has completed with no `wait-for*`
+                                                  ;;   ;; calls, so we're not waiting for anything
+                                                  ;;   ;; further.  Given that `wait-for*` calls are
+                                                  ;;   ;; only valid in tail position, the test must
+                                                  ;;   ;; now be finished.
+                                                  ;;   (done))
+                                                  )
 
                                                 ;; Test is not interested this event, but we still
                                                 ;; need to wait for the one we *are* interested in.
                                                 :else
                                                 nil)))
-      (reset! (:now-waiting-for test-context) ok-ids))))
+      (swap! *test-context* assoc :now-waiting-for ok-ids))))
 
 
 (defmacro wait-for
