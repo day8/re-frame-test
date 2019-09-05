@@ -13,7 +13,7 @@
   :plugins [[lein-shadow "0.1.5"]
             [lein-shell "0.5.0"]]
 
-  :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.1.7"]]
+  :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.2.3"]]
                    :resource-paths ["test-resources"]}}
 
   :release-tasks [["vcs" "assert-committed"]
