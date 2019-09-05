@@ -1,63 +1,36 @@
 (defproject todomvc-re-frame "0.9.0"
-  :dependencies [[org.clojure/clojure        "1.9.0-alpha10"]
-                 [org.clojure/clojurescript  "1.9.89"]
-                 [reagent "0.6.0-rc"]
-                 [re-frame "0.9.3"]
-                 [binaryage/devtools "0.8.1"]
+  :dependencies [[org.clojure/clojure        "1.10.1"]
+                 [org.clojure/clojurescript  "1.10.520"
+                  :exclusions [com.google.javascript/closure-compiler-unshaded
+                               org.clojure/google-closure-library]]
+                 [thheller/shadow-cljs "2.8.52"]
+                 [reagent "0.8.1"]
+                 [re-frame "0.10.9"]
+                 [binaryage/devtools "0.9.10"]
                  [day8.re-frame/test "0.1.5"]
                  [secretary "1.2.3"]]
 
-  :plugins [[lein-cljsbuild "1.1.4"]
-            [lein-figwheel "0.5.6"]
-            [lein-npm "0.6.2"]]
+  :plugins [[lein-shadow "0.1.5"]
+            [lein-shell "0.5.0"]]
 
-            :hooks [leiningen.cljsbuild]
+  :shadow-cljs {:nrepl  {:port 8777}
 
-  :profiles {:dev  {:dependencies [[karma-reporter "1.0.1"]
-                                   [binaryage/devtools "0.8.1"]]
-                    :cljsbuild    {:builds
-                                   {:client {:compiler {:asset-path           "js"
-                                                        :optimizations        :none
-                                                        :source-map           true
-                                                        :source-map-timestamp true
-                                                        :main                 "todomvc.core"}
-                                             :figwheel {:on-jsload "todomvc.core/main"}}}}}
+                :builds {:client {:target     :browser
+                                  :output-dir "resources/public/js"
+                                  :modules    {:client {:init-fn  todomvc.core/main}}
+                                  :dev        {:compiler-options {:external-config  {:devtools/config {:features-to-install [:formatters :hints]}}}}
+                                  :devtools   {:http-root "resources/public"
+                                               :http-port 8280}}
+                         :karma-test
+                                 {:target    :karma
+                                  :ns-regexp "-test$"
+                                  :output-to "target/karma-test.js"}}}
 
-             :prod {:cljsbuild
-                    {:builds
-                     {:client
-                      {:compiler {:asset-path    "js"
-                                  :optimizations :advanced
-                                  :elide-asserts true
-                                  :pretty-print  false}}}}}}
-
-            :figwheel {:server-port 3450
-             :repl        true}
+  :aliases {"dev-auto" ["with-profile" "dev" "shadow" "watch" "client"]
+            "test-once"  ["do"
+                          ["shadow" "compile" "karma-test"]
+                          ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]}
 
   :jvm-opts ^:replace ["-Xms256m" "-Xmx2g"]
 
-  :clean-targets ^{:protect false} ["resources/public/js" "target" "resources/public/karma"]
-
-  :npm {:devDependencies [[karma "1.0.0"]
-                          [karma-cljs-test "0.1.0"]
-                          [karma-chrome-launcher "0.2.0"]
-                          [karma-junit-reporter "0.3.8"]]}
-
-  :cljsbuild {:builds
-              {:client
-               {:source-paths ["src"]
-                :compiler     {:output-dir "resources/public/js"
-                               :output-to  "resources/public/js/client.js"}}
-               :karma
-               {:source-paths ["test" "src"]
-                :compiler     {:output-to     "resources/public/karma/test.js"
-                               :source-map    "resources/public/karma/test.js.map"
-                               :output-dir    "resources/public/karma/test"
-                               :optimizations :whitespace
-                               :main          "todomvc.test.runner"
-                               :pretty-print  true}}}}
-
-            :aliases
-            {"karma-once" ["do" "clean," "cljsbuild" "once" "karma,"]
-             "karma-auto" ["do" "clean," "cljsbuild" "auto" "karma,"]
-             "prod-once"  ["with-profile" "prod" "do" "clean," "cljsbuild" "once" "client,"]})
+  :clean-targets ^{:protect false} ["resources/public/js" "target"])
