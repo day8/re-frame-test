@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 ### Changed
 - Add a new arity to `make-widget-async` to provide a different widget shape.
+- Migrate to [shadow-cljs](https://shadow-cljs.github.io/docs/UsersGuide.html) and
+  [lein-shadow](https://gitlab.com/nikperic/lein-shadow)
+- Replace `*test-context*` dynvar of atoms with a `test-context*` atom of pure
+  data.
 
 ## [0.1.1] - 2016-07-25
 ### Changed
