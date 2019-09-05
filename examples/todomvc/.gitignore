@@ -1,1 +1,7 @@
-resources/public/js
+/resources/public/js
+/target
+/node_modules/
+/.shadow-cljs/
+/shadow-cljs.edn
+/package.json
+/package-lock.json

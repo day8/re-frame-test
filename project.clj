@@ -3,14 +3,17 @@
   :url "https://github.com/Day8/re-frame-test"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.89"]
-                 [re-frame "0.10.6"]]
-  :plugins [[lein-npm "0.6.2"]
-            [lein-cljsbuild "1.1.3"]]
+  :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.520" :scope "provided"
+                  :exclusions [com.google.javascript/closure-compiler-unshaded
+                               org.clojure/google-closure-library]]
+                 [thheller/shadow-cljs "2.8.52" :scope "provided"]
+                 [re-frame "0.10.9"]]
+  
+  :plugins [[lein-shadow "0.1.5"]
+            [lein-shell "0.5.0"]]
 
-  :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.1.7"]
-                                    [karma-reporter "1.0.1"]]
+  :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.1.7"]]
                    :resource-paths ["test-resources"]}}
 
   :release-tasks [["vcs" "assert-committed"]
@@ -25,35 +28,27 @@
   :deploy-repositories [["releases" {:sign-releases false :url "https://clojars.org/repo"}]
                         ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
 
-  :jvm-opts ["-Xmx1g" "-XX:+UseConcMarkSweepGC"]
+  :jvm-opts ["-Xmx1g"]
 
   :clean-targets [:target-path "run/compiled"]
 
-  :npm {:dependencies [[karma "1.0.0"]
-                       [karma-cljs-test "0.1.0"]
-                       [karma-chrome-launcher "0.2.0"]
-                       [karma-junit-reporter "0.3.8"]]}
+  :shadow-cljs {:nrepl  {:port 8777}
 
-  :cljsbuild
-  {:builds [{:id           "test"
-             :source-paths ["test" "src"]
-             :compiler     {:output-to            "run/compiled/browser/test.js"
-                            :source-map           true
-                            :output-dir           "run/compiled/browser/test"
-                            :optimizations        :none
-                            :source-map-timestamp true
-                            :pretty-print         true}}
-            {:id           "karma"
-             :source-paths ["test" "src"]
-             :compiler     {:output-to     "run/compiled/karma/test.js"
-                            :source-map    "run/compiled/karma/test.js.map"
-                            :output-dir    "run/compiled/karma/test"
-                            :optimizations :whitespace
-                            :main          "re_frame_undo.test_runner"
-                            :pretty-print  true}}]}
+                :builds {:browser-test
+                         {:target    :browser-test
+                          :ns-regexp "-test$"
+                          :test-dir  "resources/public/js/test"
+                          :devtools  {:http-root "resources/public/js/test"
+                                      :http-port 8290}}
 
-  :aliases {"karma-once" ["do" "clean," "cljsbuild" "once" "karma,"]
-            "karma-auto" ["do" "clean," "cljsbuild" "auto" "karma,"]})
+                         :karma-test
+                         {:target    :karma
+                          :ns-regexp "-test$"
+                          :output-to "target/karma-test.js"}}}
 
+  :aliases {"dev-auto" ["with-profile" "dev" "shadow" "watch" "browser-test"]
+            "test-once"  ["do"
+                          ["shadow" "compile" "karma-test"]
+                          ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]})
 
 
