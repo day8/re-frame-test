@@ -1,10 +1,10 @@
 # re-frame-test
 
-[![CircleCI](https://circleci.com/gh/Day8/re-frame-test.svg?style=svg)](https://circleci.com/gh/Day8/re-frame-test)
+[![CircleCI](https://circleci.com/gh/day8/re-frame-test.svg?style=svg)](https://circleci.com/gh/day8/re-frame-test)
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
 
 This library provides utilities 
-for testing [re-frame applications](https://github.com/Day8/re-frame).
+for testing [re-frame applications](https://github.com/day8/re-frame).
 
 These utilities:
   - allow you to use `subscribe` in your tests
@@ -13,7 +13,7 @@ These utilities:
   - allow you to create "end to end" integration tests, involving backend servers
 
 For context, please be sure to read the 
-[basic testing tutorial](https://github.com/Day8/re-frame/blob/master/docs/Testing.md) 
+[basic testing tutorial](https://github.com/day8/re-frame/blob/master/docs/Testing.md) 
 in the main re-frame docs before going any further.
 
 This library primarily supports the testing of Event Handlers, but Subscription Handlers

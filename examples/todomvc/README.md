@@ -1,6 +1,6 @@
 # TodoMVC done with re-frame
 
-A [re-frame](https://github.com/Day8/re-frame) implementation of [TodoMVC](http://todomvc.com/).
+A [re-frame](https://github.com/day8/re-frame) implementation of [TodoMVC](http://todomvc.com/).
 
 
 ## Setup And Run
@@ -9,7 +9,7 @@ A [re-frame](https://github.com/Day8/re-frame) implementation of [TodoMVC](http:
 
 2. Get the re-frame repo
    ```
-   git clone https://github.com/Day8/re-frame.git
+   git clone https://github.com/day8/re-frame.git
    ```
 
 3. cd to the right example directory
@@ -86,4 +86,4 @@ src
 
 Various:
  - The [official reagent example](https://github.com/reagent-project/reagent/tree/master/examples/todomvc)
- - Look at the [re-frame Wiki](https://github.com/Day8/re-frame/wiki)
+ - Look at the [re-frame Wiki](https://github.com/day8/re-frame/wiki)
