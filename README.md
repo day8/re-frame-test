@@ -1,6 +1,6 @@
 # re-frame-test
 
-[![CircleCI](https://circleci.com/gh/day8/re-frame-test.svg?style=svg)](https://circleci.com/gh/day8/re-frame-test)
+[![Continuous Integration](https://github.com/day8/re-frame-test/workflows/Continuous%20Integration/badge.svg)](https://github.com/day8/re-frame-test/actions)
 [![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
 
 This library provides utilities 
