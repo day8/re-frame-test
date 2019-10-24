@@ -10,7 +10,7 @@
                  [thheller/shadow-cljs "2.8.67" :scope "provided"]
                  [re-frame "0.10.9"]]
   
-  :plugins [[lein-shadow "0.1.5"]
+  :plugins [[lein-shadow "0.1.6"]
             [lein-shell "0.5.0"]]
 
   :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.2.3"]]
