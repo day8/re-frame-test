@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: ci
 on: [push]
 
 jobs:
@@ -20,7 +20,4 @@ jobs:
           sudo bash -c "/usr/bin/printf '\xfe\xed\xfe\xed\x00\x00\x00\x02\x00\x00\x00\x00\xe2\x68\x6e\x45\xfb\x43\xdf\xa4\xd9\x92\xdd\x41\xce\xb6\xb2\x1c\x63\x30\xd7\x92' > /etc/ssl/certs/java/cacerts"
           sudo /var/lib/dpkg/info/ca-certificates-java.postinst configure
       - name: Run Karma Test Runner
-        run: sudo lein test-once
-      - name: Run Example Karma Test Runner
-        working-directory: "./examples/todomvc"
-        run: sudo lein test-once
+        run: sudo lein karma-once

@@ -1,7 +1,7 @@
 # re-frame-test
 
-[![Continuous Integration](https://github.com/day8/re-frame-test/workflows/Continuous%20Integration/badge.svg)](https://github.com/day8/re-frame-test/actions)
-[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
+[![ci](https://github.com/day8/re-frame-test/workflows/ci/badge.svg)](https://github.com/day8/re-frame-test/actions?workflow=ci)
+[![clojars](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
 
 This library provides utilities 
 for testing [re-frame applications](https://github.com/day8/re-frame).
