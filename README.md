@@ -1,7 +1,11 @@
-# re-frame-test
+[![CI](https://github.com/day8/re-frame-test/workflows/ci/badge.svg)](https://github.com/day8/re-frame-test/actions?workflow=ci)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/day8/re-frame-test?style=flat)](https://github.com/day8/re-frame-test/tags)
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
+[![GitHub issues](https://img.shields.io/github/issues-raw/day8/re-frame-test?style=flat)](https://github.com/day8/re-frame-test/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/day8/re-frame-test)](https://github.com/day8/re-frame-test/pulls)
+[![License](https://img.shields.io/github/license/day8/re-frame-test.svg)](LICENSE)
 
-[![ci](https://github.com/day8/re-frame-test/workflows/ci/badge.svg)](https://github.com/day8/re-frame-test/actions?workflow=ci)
-[![clojars](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
+# re-frame-test
 
 This library provides utilities 
 for testing [re-frame applications](https://github.com/day8/re-frame).
