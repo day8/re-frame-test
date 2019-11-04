@@ -1,8 +1,21 @@
-(defproject day8.re-frame/test "0.1.6-SNAPSHOT"
+(defproject day8.re-frame/test "see :git-version below https://github.com/arrdem/lein-git-version"
   :description "re-frame testing tools"
   :url "https://github.com/day8/re-frame-test"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
+
+  :git-version
+  {:status-to-version
+   (fn [{:keys [tag version branch ahead ahead? dirty?] :as git}]
+     (assert (re-find #"\d+\.\d+\.\d+" tag)
+       "Tag is assumed to be a raw SemVer version")
+     (if (and tag (not ahead?) (not dirty?))
+       tag
+       (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" tag)
+             patch            (Long/parseLong patch)
+             patch+           (inc patch)]
+         (format "%s.%d-%s-SNAPSHOT" prefix patch+ ahead))))}
+
   :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"
                   :exclusions [com.google.javascript/closure-compiler-unshaded
@@ -10,20 +23,14 @@
                  [thheller/shadow-cljs "2.8.67" :scope "provided"]
                  [re-frame "0.10.9"]]
   
-  :plugins [[lein-shadow "0.1.6"]
+  :plugins [[me.arrdem/lein-git-version "2.0.3"]
+            [lein-shadow "0.1.6"]
             [lein-shell "0.5.0"]]
 
   :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.2.3"]]
                    :resource-paths ["test-resources"]}}
 
-  :release-tasks [["vcs" "assert-committed"]
-                  ["change" "version" "leiningen.release/bump-version" "release"]
-                  ["vcs" "commit"]
-                  ["vcs" "tag" "v" "--no-sign"]
-                  ["deploy"]
-                  ["change" "version" "leiningen.release/bump-version"]
-                  ["vcs" "commit"]
-                  ["vcs" "push"]]
+  :release-tasks [["deploy"]]
 
   :deploy-repositories [["releases" {:sign-releases false :url "https://clojars.org/repo"}]
                         ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
