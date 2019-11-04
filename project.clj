@@ -30,10 +30,12 @@
   :profiles {:dev {:dependencies   [[ch.qos.logback/logback-classic "1.2.3"]]
                    :resource-paths ["test-resources"]}}
 
-  :release-tasks [["deploy"]]
+  :release-tasks [["deploy" "clojars"]]
 
-  :deploy-repositories [["releases" {:sign-releases false :url "https://clojars.org/repo"}]
-                        ["snapshots" {:sign-releases false :url "https://clojars.org/repo"}]]
+  :deploy-repositories [["clojars" {:sign-releases false
+                                    :url "https://clojars.org/repo"
+                                    :username :env/CLOJARS_USERNAME
+                                    :password :env/CLOJARS_PASSWORD}]]
 
   :jvm-opts ["-Xmx1g"]
 
