@@ -1,4 +1,21 @@
-(defproject todomvc-re-frame "0.9.0"
+(defproject todomvc-re-frame "see :git-version below https://github.com/arrdem/lein-git-version"
+
+  :git-version
+  {:status-to-version
+   (fn [{:keys [tag version branch ahead ahead? dirty?] :as git-status}]
+     (if-not (string? tag)
+       ;; If git-status is nil (i.e. IntelliJ reading project.clj) then return an empty version.
+       "_"
+       (if (and (not ahead?) (not dirty?))
+         tag
+         (let [[_ major minor patch suffix] (re-find #"v?(\d+)\.(\d+)\.(\d+)(-.+)?" tag)]
+           (if (nil? major)
+             ;; If tag is poorly formatted then return GIT-TAG-INVALID
+             "GIT-TAG-INVALID"
+             (let [patch' (try (Long/parseLong patch) (catch Throwable _ 0))
+                   patch+ (inc patch')]
+               (str major "." minor "." patch+ suffix "-" ahead "-SNAPSHOT")))))))}
+
   :dependencies [[org.clojure/clojure        "1.10.1"]
                  [org.clojure/clojurescript  "1.10.520"
                   :exclusions [com.google.javascript/closure-compiler-unshaded
@@ -10,7 +27,8 @@
                  [day8.re-frame/test "0.1.5"]
                  [secretary "1.2.3"]]
 
-  :plugins [[lein-shadow "0.1.5"]
+  :plugins [[me.arrdem/lein-git-version "2.0.3"]
+            [lein-shadow "0.1.5"]
             [lein-shell "0.5.0"]]
 
   :shadow-cljs {:nrepl  {:port 8777}
