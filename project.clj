@@ -9,7 +9,7 @@
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library
                                org.clojure/google-closure-library-third-party]]
-                 [thheller/shadow-cljs      "2.8.80" :scope "provided"]
+                 [thheller/shadow-cljs      "2.8.81" :scope "provided"]
                  [re-frame                  "0.10.9"]]
 
   :plugins      [[day8/lein-git-inject "0.0.2"]
