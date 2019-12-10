@@ -12,7 +12,7 @@
                  [thheller/shadow-cljs      "2.8.81" :scope "provided"]
                  [re-frame                  "0.10.9"]]
 
-  :plugins      [[day8/lein-git-inject "0.0.2"]
+  :plugins      [[day8/lein-git-inject "0.0.4"]
                  [lein-shadow          "0.1.7"]
                  [lein-shell           "0.5.0"]]
 
