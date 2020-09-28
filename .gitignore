@@ -3,8 +3,6 @@
 /node_modules
 /.shadow-cljs/
 /shadow-cljs.edn
-/package.json
-/package-lock.json
 /classes
 /checkouts
 pom.xml

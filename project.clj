@@ -5,15 +5,15 @@
                 :url "https://opensource.org/licenses/MIT"}
 
   :dependencies [[org.clojure/clojure       "1.10.1" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.748" :scope "provided"
+                 [org.clojure/clojurescript "1.10.773" :scope "provided"
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library
                                org.clojure/google-closure-library-third-party]]
-                 [thheller/shadow-cljs      "2.8.109" :scope "provided"]
-                 [re-frame                  "0.12.0"]]
+                 [thheller/shadow-cljs      "2.11.4" :scope "provided"]
+                 [re-frame                  "1.1.1"]]
 
-  :plugins      [[day8/lein-git-inject "0.0.11"]
-                 [lein-shadow          "0.1.7"]
+  :plugins      [[day8/lein-git-inject "0.0.14"]
+                 [lein-shadow          "0.3.1"]
                  [lein-shell           "0.5.0"]]
 
   :middleware   [leiningen.git-inject/middleware]
@@ -46,10 +46,10 @@
                           :ns-regexp "-test$"
                           :output-to "target/karma-test.js"}}}
 
-  :aliases {"dev-auto"    ["with-profile" "dev" "do"
+  :aliases {"watch"    ["with-profile" "dev" "do"
                            ["clean"]
-                           ["shadow" "watch" "browser-test"]]
-            "karma-once"  ["do"
+                           ["shadow" "watch" "browser-test" "karma-test"]]
+            "ci"  ["do"
                            ["clean"]
                            ["shadow" "compile" "karma-test"]
                            ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]})
