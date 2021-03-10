@@ -24,15 +24,6 @@ in the main re-frame docs before going any further.
 This library primarily supports the testing of Event Handlers, but Subscription Handlers
 get to come along for the ride.
 
-#### TOC
-
-- [Quick Start Guide](#quick-start-guide)
-- [How It Works](#how-it-works)
-- [run-test-sync](#run-test-sync)
-- [run-test-async](#run-test-async)
-- [Running the CLJS tests with Karma](#running-the-cljs-tests-with-karma)
-- [License](#license)
-
 ## Quick Start Guide
 
 ### Step 1. Add Dependency
