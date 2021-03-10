@@ -27,7 +27,7 @@ get to come along for the ride.
 #### TOC
 
 - [Quick Start Guide](#quick-start-guide)
-- [Implementation](#implementation)
+- [How It Works](#how-it-works)
 - [run-test-sync](#run-test-sync)
 - [run-test-async](#run-test-async)
 - [Running the CLJS tests with Karma](#running-the-cljs-tests-with-karma)
@@ -48,17 +48,17 @@ In the namespace where you register your tests, perhaps called `tests.cljs`, you
 
 **First**, add this require to the `ns`:
 ```clj
-(ns app.events
+(ns app.tests
   (:require
     ...
     [day8.re-frame.test :as rf-test]   ;; <-- add this
     ...))
 ```
 
-**Second**, Define some tests. 
+**Second**, Define or Modify some tests. 
 ```Clojure
 (deftest init
-  (rf-test/run-test-sync
+  (rf-test/run-test-sync               ;; <-- add this 
     ;; with the above macro this becomes a dispatch-sync 
     ;; and app-db is isolated between tests
     (rf/dispatch [:initialise-db])   
@@ -68,7 +68,7 @@ In the namespace where you register your tests, perhaps called `tests.cljs`, you
       (is (= :all @showing)))))
 ```
 
-## Implementation
+## How It Works
 
 `re-frame-test` provides two macros which dovetail with `cljs.test`.
  
