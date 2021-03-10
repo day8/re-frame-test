@@ -23,7 +23,51 @@ in the main re-frame docs before going any further.
 
 This library primarily supports the testing of Event Handlers, but Subscription Handlers
 get to come along for the ride.
- 
+
+#### TOC
+
+- [Quick Start Guide](#quick-start-guide)
+- [Implementation](#implementation)
+- [run-test-sync](#run-test-sync)
+- [run-test-async](#run-test-async)
+- [Running the CLJS tests with Karma](#running-the-cljs-tests-with-karma)
+- [License](#license)
+
+## Quick Start Guide
+
+### Step 1. Add Dependency
+
+Add the following project dependency: <br>
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
+
+Requires re-frame >= "1.1.1"
+
+### Step 2. Registration And Use
+
+In the namespace where you register your tests, perhaps called `tests.cljs`, you have 2 things to do.
+
+**First**, add this require to the `ns`:
+```clj
+(ns app.events
+  (:require
+    ...
+    [day8.re-frame.test :as rf-test]   ;; <-- add this
+    ...))
+```
+
+**Second**, Define some tests. 
+```Clojure
+(deftest init
+  (rf-test/run-test-sync
+    ;; with the above macro this becomes a dispatch-sync 
+    ;; and app-db is isolated between tests
+    (rf/dispatch [:initialise-db])   
+    ;; Define subscriptions to the app state
+    (let [showing         (rf/subscribe [:showing])] 
+      ;;Assert the initial state
+      (is (= :all @showing)))))
+```
+
 ## Implementation
 
 `re-frame-test` provides two macros which dovetail with `cljs.test`.
