@@ -1,10 +1,12 @@
+<!--
 [![CI](https://github.com/day8/re-frame-test/workflows/ci/badge.svg)](https://github.com/day8/re-frame-test/actions?workflow=ci)
 [![CD](https://github.com/day8/re-frame-test/workflows/cd/badge.svg)](https://github.com/day8/re-frame-test/actions?workflow=cd)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/day8/re-frame-test?style=flat)](https://github.com/day8/re-frame-test/tags)
-[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test.svg)](https://clojars.org/day8.re-frame/test)
-[![GitHub issues](https://img.shields.io/github/issues-raw/day8/re-frame-test?style=flat)](https://github.com/day8/re-frame-test/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/day8/re-frame-test)](https://github.com/day8/re-frame-test/pulls)
-[![License](https://img.shields.io/github/license/day8/re-frame-test.svg)](LICENSE)
+-->
+[![Clojars Project](https://img.shields.io/clojars/v/day8.re-frame/test?style=for-the-badge&logo=clojure&logoColor=fff)](https://clojars.org/day8.re-frame/test)
+[![GitHub issues](https://img.shields.io/github/issues-raw/day8/re-frame-test?style=for-the-badge&logo=github)](https://github.com/day8/re-frame-test/issues)
+[![License](https://img.shields.io/github/license/day8/re-frame-test?style=for-the-badge)](LICENSE)
 
 # re-frame-test
 
