@@ -4,7 +4,7 @@ on: [push]
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
       # Source: https://github.com/day8/dockerfile-for-dev-ci-image
       image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2
