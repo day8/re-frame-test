@@ -36,7 +36,7 @@ jobs:
             ${{ runner.os }}-shadow-cljs-
       - run: lein ci 
       - name: Slack notification
-        uses: homoluctus/slatify@v2.0.1
+        uses: homoluctus/slatify@v3.0.0
         if: failure() || cancelled()
         with:
           type: ${{ job.status }}
@@ -80,7 +80,7 @@ jobs:
           draft: false
           prerelease: false
       - name: Slack notification
-        uses: homoluctus/slatify@v2.0.1
+        uses: homoluctus/slatify@v3.0.0
         if: always()
         with:
           type: ${{ job.status }}
