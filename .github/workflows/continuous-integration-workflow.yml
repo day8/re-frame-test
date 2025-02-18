@@ -9,7 +9,7 @@ jobs:
       # Source: https://github.com/day8/dockerfile-for-dev-ci-image
       image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: Maven cache
         uses: actions/cache@v1
         with:
