@@ -1,12 +1,29 @@
-{:paths   ["src"]
- :deps    {org.clojure/clojure  {:mvn/version "1.11.1"}
-           re-frame/re-frame    {:mvn/version "1.4.3"}
-           babashka/process     {:mvn/version "0.5.22"}
-           babashka/fs          {:mvn/version "0.5.22"}
-           http-kit/http-kit    {:mvn/version "2.8.0"}
-           thheller/shadow-cljs {:mvn/version "2.28.2"}
-           org.jsoup/jsoup      {:mvn/version "1.17.2"}}
- :aliases {:test {:extra-paths ["test"]
-                  :exec-fn     day8.chrome-shadow-test-runner/run
-                  :exec-args   {:test-dir    "run/resources/public/js/test"
-                                :chrome-path "chromium"}}}}
+{:paths ["src"]
+ :deps  {org.clojure/clojure  {:mvn/version "1.11.1"}
+         re-frame/re-frame    {:mvn/version "1.4.3"}
+         babashka/process     {:mvn/version "0.5.22"}
+         babashka/fs          {:mvn/version "0.5.22"}
+         http-kit/http-kit    {:mvn/version "2.8.0"}
+         thheller/shadow-cljs {:mvn/version "2.28.2"}
+         org.jsoup/jsoup      {:mvn/version "1.17.2"}}
+ :aliases
+ {:test        {:extra-paths ["test"]
+                :exec-fn     day8.chrome-shadow-test-runner/run
+                :exec-args   {:test-dir    "run/resources/public/js/test"
+                              :chrome-path "chromium"}}
+  :provided    {org.clojure/clojure  {:mvn/version "1.11.1"}
+                re-frame/re-frame    {:mvn/version "1.4.3"}
+                babashka/process     {:mvn/version "0.5.22"}
+                babashka/fs          {:mvn/version "0.5.22"}
+                http-kit/http-kit    {:mvn/version "2.8.0"}
+                thheller/shadow-cljs {:mvn/version "2.28.2"}
+                org.jsoup/jsoup      {:mvn/version "1.17.2"}}
+  :clein       {:extra-deps {io.github.noahtheuke/clein {:mvn/version "0.4.1"}}
+                :main-opts  ["-m" "noahtheduke.clein"]}
+  :clein/build {:lib      day8.re-frame/test
+                :main     day8.re-frame.test
+                :url      "https://github.com/day8/re-frame-test"
+                :version  ".version"
+                :license  {:name "MIT"
+                           :url  "https://opensource.org/licenses/MIT"}
+                :src-dirs ["src"]}}}
