@@ -39,7 +39,12 @@ jobs:
       - name: Fix git dubious directory ownership error
         run: git config --global --add safe.directory /__w/re-frame-test/re-frame-test
 
-      - run: bb release-demo
+      - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+        with:
+          chrome-version: 811961
+
+      - run: bb test :chrome-path '"${{ steps.setup-chrome.outputs.chrome-path }}"'
 
       - name: Slack notification
         uses: homoluctus/slatify@v2.0.1
@@ -84,7 +89,7 @@ jobs:
           key: cljdeps-${{ hashFiles('deps.edn') }}-${{ hashFiles ('package.json') }}-${{ hashFiles ('package-lock.json') }}
           restore-keys: cljdeps-
 
-      - run: bb release-clojars
+      - run: bb clojars
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
           CLOJARS_TOKEN: ${{ secrets.CLOJARS_TOKEN }}

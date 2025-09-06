@@ -5,33 +5,45 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    container:
-      # Source: https://github.com/day8/dockerfile-for-dev-ci-image
-      image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Maven cache
-        uses: actions/cache@v4
+      - uses: actions/checkout@v5
+
+        
+      - name: Setup java
+        uses: actions/setup-java@v3
         with:
-          path: /root/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('project.clj') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: npm cache
-        uses: actions/cache@v4
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('project.clj') }}-${{ hashFiles('**/deps.cljs') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: shadow-cljs compiler cache
-        uses: actions/cache@v4
+          cli:  'latest'
+          bb:   'latest'
+
+      - name: Cache clojure dependencies
+        uses: actions/cache@v3
         with:
-          path: .shadow-cljs
-          key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-shadow-cljs-
-      - run: lein ci 
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+            ~/.npm
+            .shadow-cljs
+          key: cljdeps-${{ hashFiles('deps.edn') }}-${{ hashFiles ('package.json') }}-${{ hashFiles ('package-lock.json') }}
+          restore-keys: cljdeps-
+
+      - name: Fix git dubious directory ownership error
+        run: git config --global --add safe.directory /__w/re-frame-test/re-frame-test
+
+      - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+        with:
+          chrome-version: 811961
+
+      - run: bb test :chrome-path '"${{ steps.setup-chrome.outputs.chrome-path }}"'
+
       - name: Slack notification
         uses: homoluctus/slatify@v3.0.0
         if: failure() || cancelled()

@@ -1,5 +1,7 @@
 {:tasks
- {:init      (do (defn release-tag []
+ {:requires  [[babashka.fs :as fs]
+              [clojure.string :as str]]
+  :init      (do (defn release-tag []
                    (->> (shell {:out :string}
                                "git tag -l --sort=v:refname")
                         :out
@@ -13,13 +15,13 @@
                      (when-not (fs/exists? f)
                        (fs/create-file f)
                        (fs/delete-on-exit f))
-                     (fs/update-file f (constantly version)))))
+                     (fs/update-file f (fn [& _] (release-tag))))))
   install    (shell "npm install")
   test       {:doc     "Compile and run shadow-cljs browser tests, using headless chrome."
               :depends [install]
               :task    (do
                          (shell "clojure -M:test -m shadow.cljs.devtools.cli compile browser-test")
-                         (shell "clojure -X:test"))}
+                         (apply shell "clojure -X:test"  *command-line-args*))}
   clojars    {:depends [install]
               :task    (do (version-dotfile)
                            (shell "clojure -M:clein deploy"))}
