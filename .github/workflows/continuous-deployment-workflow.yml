@@ -7,36 +7,42 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-20.04
-    container:
-      # Source: https://github.com/day8/dockerfile-for-dev-ci-image
-      image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2
+    runs-on: ubuntu-22.04
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Maven cache
-        uses: actions/cache@v4
+      - uses: actions/checkout@v5
+
+      - name: Setup java
+        uses: actions/setup-java@v3
         with:
-          path: /root/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('project.clj') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: npm cache
-        uses: actions/cache@v4
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('project.clj') }}-${{ hashFiles('**/deps.cljs') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: shadow-cljs compiler cache
-        uses: actions/cache@v4
+          cli:  'latest'
+          bb:   'latest'
+
+      - name: Cache clojure dependencies
+        uses: actions/cache@v3
         with:
-          path: .shadow-cljs
-          key: ${{ runner.os }}-shadow-cljs-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-shadow-cljs-
-      - run: lein ci 
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+            ~/.npm
+            .shadow-cljs
+          key: cljdeps-${{ hashFiles('deps.edn') }}-${{ hashFiles ('package.json') }}-${{ hashFiles ('package-lock.json') }}
+          restore-keys: cljdeps-
+
+      - name: Fix git dubious directory ownership error
+        run: git config --global --add safe.directory /__w/re-frame-test/re-frame-test
+
+      - run: bb release-demo
+
       - name: Slack notification
-        uses: homoluctus/slatify@v3.0.0
+        uses: homoluctus/slatify@v2.0.1
         if: failure() || cancelled()
         with:
           type: ${{ job.status }}
@@ -45,29 +51,51 @@ jobs:
           url: ${{ secrets.SLACK_WEBHOOK }}
           commit: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
   release:
     name: Release
     needs: test
-    runs-on: ubuntu-20.04
-    container:
-      # Source: https://github.com/day8/dockerfile-for-dev-ci-image
-      image: ghcr.io/day8/dockerfile-for-dev-ci-image/chrome-56:2
+    runs-on: ubuntu-22.04
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Maven cache
-        uses: actions/cache@v4
+      - uses: actions/checkout@v5
+
+      - name: Setup java
+        uses: actions/setup-java@v3
         with:
-          path: /root/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('project.clj') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: Run lein release
-        run: |
-          CLOJARS_USERNAME=${{ secrets.CLOJARS_USERNAME }} CLOJARS_TOKEN=${{ secrets.CLOJARS_TOKEN }} GITHUB_USERNAME=${{ github.actor }} GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} lein release
-      # This creates a 'GitHub Release' from the tag and includes link to the CHANGELOG
-      # at that point in the Git history. We do not use draft or prerelease features as
-      # we always want the latest release to show in the right hand column of the project
-      # page regardless of if it is a stable release.
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli:  'latest'
+          bb:   'latest'
+
+      - name: Cache clojure dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+            ~/.npm
+            .shadow-cljs
+          key: cljdeps-${{ hashFiles('deps.edn') }}-${{ hashFiles ('package.json') }}-${{ hashFiles ('package-lock.json') }}
+          restore-keys: cljdeps-
+
+      - run: bb release-clojars
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_TOKEN: ${{ secrets.CLOJARS_TOKEN }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_TOKEN }}
+          GITHUB_USERNAME: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # This creates a 'GitHub Release' from the tag and includes link to CHANGELOG.md at the current
+      # git ref. We do not use draft or prerelease features as we always want
+      # the latest release to show in the right hand column of the project page regardless
+      # of if it is a stable release.
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
@@ -79,8 +107,9 @@ jobs:
             [Changelog](https://github.com/day8/re-frame-test/blob/${{ github.ref }}/CHANGELOG.md)
           draft: false
           prerelease: false
+
       - name: Slack notification
-        uses: homoluctus/slatify@v3.0.0
+        uses: homoluctus/slatify@v2.0.1
         if: always()
         with:
           type: ${{ job.status }}

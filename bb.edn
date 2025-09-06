@@ -1,9 +1,27 @@
 {:tasks
- {install    (shell "npm install")
+ {:init      (do (defn release-tag []
+                   (->> (shell {:out :string}
+                               "git tag -l --sort=v:refname")
+                        :out
+                        str/split-lines
+                        (filter (fn [s]
+                                  (re-find (re-pattern "^v\\d+\\.\\d+\\.\\d+$") s)))
+                        last
+                        str/trim))
+                 (defn version-dotfile []
+                   (let [f (fs/file ".version")]
+                     (when-not (fs/exists? f)
+                       (fs/create-file f)
+                       (fs/delete-on-exit f))
+                     (fs/update-file f (constantly version)))))
+  install    (shell "npm install")
   test       {:doc     "Compile and run shadow-cljs browser tests, using headless chrome."
               :depends [install]
               :task    (do
                          (shell "clojure -M:test -m shadow.cljs.devtools.cli compile browser-test")
                          (shell "clojure -X:test"))}
+  clojars    {:depends [install]
+              :task    (do (version-dotfile)
+                           (shell "clojure -M:clein deploy"))}
   watch-test {:doc  "Run a hot-reloading shadow-cljs browser-test"
               :task (shell "clojure -M '-m shadow.cljs.devtools.cli watch browser-test")}}}
