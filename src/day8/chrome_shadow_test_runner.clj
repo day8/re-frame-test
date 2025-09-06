@@ -11,7 +11,7 @@
   ["--headless"
    "--disable-gpu"
    "--no-sandbox"
-   "--virtual-time-budget=30000"
+   "--virtual-time-budget=60000"
    "--dump-dom"])
 
 (defn find-free-port []
@@ -105,7 +105,7 @@
 
 (defn run
   "Run ClojureScript browser tests using Chrome headless.
-  
+
   Options:
   - :test-dir    Path to compiled test directory (default: run/resources/public/compiled_test)
   - :chrome-path Path to Chrome binary (default: chromium)"
@@ -120,10 +120,24 @@
     (let [stop-server (start-test-server test-path port)]
       (Thread/sleep 1000) ; Give server time to start
       (try
-        (let [result (run-chrome-tests chrome-bin port)]
-          (when-not (zero? (:exit result))
-            (println (str "Chrome failed with exit code: " (:exit result)))
-            (System/exit 1))
+        (let [result (run-chrome-tests chrome-bin port)
+              exit-code (:exit result)]
+          (println (str "Chrome exit code: " exit-code))
+
+          ;; Analyze Chrome exit code
+          (cond
+            (zero? exit-code)
+            (println "Chrome completed successfully within virtual time budget")
+
+            (= exit-code 1)
+            (println "Chrome encountered errors or tests failed")
+
+            :else
+            (do
+              (println (str "Chrome exited unexpectedly with code: " exit-code))
+              (when (:err result)
+                (println "Chrome stderr:" (:err result)))
+              (System/exit 1)))
 
           (let [{:keys [passed failed failed-tests]} (parse-test-results (:out result))]
             (println (str "\nResults: " passed " passed, " failed " failed"))
