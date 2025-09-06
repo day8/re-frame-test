@@ -10,12 +10,14 @@
                                   (re-find (re-pattern "^v\\d+\\.\\d+\\.\\d+$") s)))
                         last
                         str/trim))
+                 (defn version []
+                   (apply str (drop-while #{\v} (release-tag))))
                  (defn version-dotfile []
                    (let [f (fs/file ".version")]
                      (when-not (fs/exists? f)
                        (fs/create-file f)
                        (fs/delete-on-exit f))
-                     (fs/update-file f (fn [& _] (release-tag))))))
+                     (fs/update-file f (fn [& _] (version))))))
   install    (shell "npm install")
   test       {:doc     "Compile and run shadow-cljs browser tests, using headless chrome."
               :depends [install]
