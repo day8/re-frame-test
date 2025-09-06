@@ -1,0 +1,9 @@
+{:tasks
+ {install    (shell "npm install")
+  test       {:doc     "Compile and run shadow-cljs browser tests, using headless chrome."
+              :depends [install]
+              :task    (do
+                         (shell "clojure -M:test -m shadow.cljs.devtools.cli compile browser-test")
+                         (shell "clojure -X:test"))}
+  watch-test {:doc  "Run a hot-reloading shadow-cljs browser-test"
+              :task (shell "clojure -M '-m shadow.cljs.devtools.cli watch browser-test")}}}

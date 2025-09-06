@@ -1,0 +1,8 @@
+{:deps   {:aliases [:test]}
+ :nrepl  {:port 8777}
+ :builds {:browser-test
+          {:target    :browser-test
+           :ns-regexp "-test$"
+           :test-dir  "run/resources/public/js/test"
+           :devtools  {:http-root "run/resources/public/js/test"
+                       :http-port 8290}} }}
