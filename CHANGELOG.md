@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## 0.1.7
+### Fixed
+- Fixed missing cljdocs: https://cljdoc.org/d/day8.re-frame/test/v0.1.7
+
 ## 0.1.6
 ### Added
 - New test runner, `day8.chrome-shadow-test-runner`. Usage:
