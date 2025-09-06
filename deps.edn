@@ -1,0 +1,7 @@
+{:paths ["src"]
+ :deps  {org.clojure/clojure {:mvn/version "1.11.1"}
+         re-frame/re-frame   {:mvn/version "1.4.3"}
+         babashka/process    {:mvn/version "0.5.22"}
+         babashka/fs         {:mvn/version "0.5.22"}
+         http-kit/http-kit   {:mvn/version "2.8.0"}
+         org.jsoup/jsoup     {:mvn/version "1.17.2"}}}
