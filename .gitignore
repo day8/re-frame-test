@@ -2,7 +2,6 @@
 /run
 /node_modules
 /.shadow-cljs/
-/shadow-cljs.edn
 /classes
 /checkouts
 pom.xml
