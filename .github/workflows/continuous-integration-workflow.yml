@@ -37,7 +37,7 @@ jobs:
       - name: Fix git dubious directory ownership error
         run: git config --global --add safe.directory /__w/re-frame-test/re-frame-test
 
-      - uses: browser-actions/setup-chrome@v1
+      - uses: browser-actions/setup-chrome@v2
         id: setup-chrome
         with:
           chrome-version: 811961
