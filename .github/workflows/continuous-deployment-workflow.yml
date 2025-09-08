@@ -19,7 +19,7 @@ jobs:
           java-version: '21'
 
       - name: Install clojure tools
-        uses: DeLaGuardo/setup-clojure@12.5
+        uses: DeLaGuardo/setup-clojure@13.4
         with:
           cli:  'latest'
           bb:   'latest'
@@ -72,7 +72,7 @@ jobs:
           java-version: '21'
 
       - name: Install clojure tools
-        uses: DeLaGuardo/setup-clojure@12.5
+        uses: DeLaGuardo/setup-clojure@13.4
         with:
           cli:  'latest'
           bb:   'latest'
